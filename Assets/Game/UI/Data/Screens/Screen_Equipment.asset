@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a89f0be2b2d5340a43dd5c8bac6dc7, type: 3}
+  m_Name: Screen_Equipment
+  m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.UI.ScreenDefinition
+  screenId: equipment
+  displayName: Equipment
+  subtitle: Editable equipment screen shell with visible slot layout placeholders.
+  sortOrder: 30
+  screenPrefab: {fileID: 2689895744924379855, guid: bab3590a65b9deb469e1acbd62e5f5d8, type: 3}
+  visibleInNavigation: 1
+  cacheInstance: 1

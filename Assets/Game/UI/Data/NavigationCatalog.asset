@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8df7e398b89fbc45b198a6461e86bdd, type: 3}
+  m_Name: NavigationCatalog
+  m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.UI.NavigationCatalog
+  groups:
+  - {fileID: 11400000, guid: 8d9ab76f49a202740a3b160e61539213, type: 2}
+  - {fileID: 11400000, guid: 3518ac271eb542d4ab5ed32a313c59a5, type: 2}
+  - {fileID: 11400000, guid: 49e7d9575d66c0644a6bd093b526ab53, type: 2}
+  entries:
+  - {fileID: 11400000, guid: 34952ab8228cd424bac949820fc5145d, type: 2}
+  - {fileID: 11400000, guid: 50560114dc8c18641b9df23f739f9a04, type: 2}
+  - {fileID: 11400000, guid: 0403207b3dbaadc44aa2fabdc64bb37e, type: 2}
+  - {fileID: 11400000, guid: a262c99ef7c81a24d9f70e65f7f626bd, type: 2}
+  - {fileID: 11400000, guid: 7195a5a7517a24a478c09f72a937271d, type: 2}
