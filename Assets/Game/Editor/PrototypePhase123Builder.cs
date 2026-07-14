@@ -1767,14 +1767,10 @@ namespace IdleGame.Editor
 
             var filters = CreatePanel("[CONTROLS] EquipmentFilterBar", column.transform, RaisedPanel, Border);
             AddLayout(filters, 44f);
-            var filterLayout = filters.AddComponent<HorizontalLayoutGroup>();
-            filterLayout.padding = new RectOffset(8, 8, 7, 7);
-            filterLayout.spacing = 8f;
-            filterLayout.childControlWidth = false;
-            filterLayout.childControlHeight = true;
+            var filterContent = CreateHorizontalScrollContent(filters, "[CONTENT] EquipmentFilterContent", new RectOffset(8, 8, 7, 7), 8f);
             foreach (var filter in new[] { "All", "Weapon", "Armor", "Jewelry", "Tool", "Combat", "Profession" })
             {
-                CreateButton("[BUTTON] Filter" + filter + "Button", filters.transform, filter, 82f, PanelBackground);
+                CreateButton("[BUTTON] Filter" + filter + "Button", filterContent, filter, 82f, PanelBackground);
             }
 
             var search = CreatePanel("[CONTROLS] EquipmentSearchSortRow", column.transform, DeepBackground, Border);
@@ -1784,24 +1780,20 @@ namespace IdleGame.Editor
 
             var inventory = CreatePanel("[DYNAMIC CONTENT] EquipmentInventoryList", column.transform, DeepBackground, Border);
             AddLayout(inventory, 160f);
-            var inventoryLayout = inventory.AddComponent<VerticalLayoutGroup>();
-            inventoryLayout.padding = new RectOffset(8, 8, 8, 8);
-            inventoryLayout.spacing = 5f;
-            inventoryLayout.childControlWidth = true;
-            inventoryLayout.childControlHeight = true;
-            inventoryLayout.childForceExpandWidth = true;
-            inventoryLayout.childForceExpandHeight = false;
-            CreateEquipmentListRow(inventory.transform, "Ironwood Ranger Axe", "1,260", "Lv. 40", true);
-            CreateEquipmentListRow(inventory.transform, "Steel Lumber Axe", "1,050", "Lv. 30", false);
-            CreateEquipmentListRow(inventory.transform, "Oak Splitter Axe", "820", "Lv. 20", false);
-            CreateEquipmentListRow(inventory.transform, "Bronze Hatchet", "610", "Lv. 10", false);
+            var inventoryContent = CreateVerticalScrollContent(inventory, "[CONTENT] EquipmentInventoryContent", new RectOffset(8, 8, 8, 8), 5f);
+            CreateEquipmentListRow(inventoryContent, "Ironwood Ranger Axe", "1,260", "Lv. 40", true);
+            CreateEquipmentListRow(inventoryContent, "Steel Lumber Axe", "1,050", "Lv. 30", false);
+            CreateEquipmentListRow(inventoryContent, "Oak Splitter Axe", "820", "Lv. 20", false);
+            CreateEquipmentListRow(inventoryContent, "Bronze Hatchet", "610", "Lv. 10", false);
 
             var comparison = CreatePanel("[SECTION] EquipmentComparisonSection", column.transform, PanelBackground, Border);
-            AddLayout(comparison, 132f);
+            AddLayout(comparison, 158f);
             CreateAnchoredText("[HEADER] ComparisonHeader", comparison.transform, "EQUIPMENT COMPARISON", 17f, AccentGold, TextAlignmentOptions.Left | TextAlignmentOptions.Top, Vector2.zero, Vector2.one, new Vector2(12f, -12f), new Vector2(-12f, -8f));
-            CreateComparisonLine(comparison.transform, "Gathering Power", "1,260", "1,050", "-210", 0);
-            CreateComparisonLine(comparison.transform, "Durability", "210 / 210", "180 / 180", "-30", 1);
-            CreateComparisonLine(comparison.transform, "Speed", "+12%", "+10%", "-2%", 2);
+            CreateComparisonItemPanel(comparison.transform, "[PANEL] CurrentComparisonItemPanel", "CURRENT ITEM", "Ironwood Ranger Axe", "PWR 1,260", true);
+            CreateComparisonItemPanel(comparison.transform, "[PANEL] SelectedComparisonItemPanel", "SELECTED ITEM", "Steel Lumber Axe", "PWR 1,050", false);
+            CreateComparisonStatRow(comparison.transform, "Gathering Power", "1,260", "1,050", "-210", 0, false);
+            CreateComparisonStatRow(comparison.transform, "Durability", "210 / 210", "180 / 180", "-30", 1, false);
+            CreateComparisonStatRow(comparison.transform, "Speed", "+12%", "+10%", "-2%", 2, false);
 
             var currentStats = CreatePanel("[SECTION] CurrentStatsSection", column.transform, PanelBackground, Border);
             AddLayout(currentStats, 104f);
@@ -1919,6 +1911,40 @@ namespace IdleGame.Editor
             CreateAnchoredText("[TEXT] ItemName", row.transform, itemName, 16f, selected ? AccentGold : TextPrimary, TextAlignmentOptions.Left | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(50f, 0f), new Vector2(-210f, 0f));
             CreateAnchoredText("[TEXT] ItemPower", row.transform, "PWR " + power, 15f, AccentGold, TextAlignmentOptions.Right | TextAlignmentOptions.Midline, new Vector2(1f, 0f), Vector2.one, new Vector2(-200f, 0f), new Vector2(-74f, 0f));
             CreateAnchoredText("[TEXT] ItemLevel", row.transform, level, 14f, AccentGold, TextAlignmentOptions.Right | TextAlignmentOptions.Midline, new Vector2(1f, 0f), Vector2.one, new Vector2(-70f, 0f), new Vector2(-10f, 0f));
+        }
+
+        private static void CreateComparisonItemPanel(Transform parent, string name, string label, string itemName, string power, bool leftSide)
+        {
+            var panel = CreatePanel(name, parent, DeepBackground, Border);
+            var rect = (RectTransform)panel.transform;
+            var minX = leftSide ? 0f : 0.5f;
+            var maxX = leftSide ? 0.5f : 1f;
+            SetStretch(rect, new Vector2(minX, 1f), new Vector2(maxX, 1f), new Vector2(leftSide ? 12f : 6f, -88f), new Vector2(leftSide ? -6f : -12f, -34f));
+
+            var icon = CreatePanel("[ICON] ComparisonItemIcon", panel.transform, RaisedPanel, leftSide ? AccentGold : Border);
+            var iconRect = (RectTransform)icon.transform;
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(8f, 0f);
+            iconRect.sizeDelta = new Vector2(38f, 38f);
+            CreateAnchoredText("[TEXT] ComparisonItemIconGlyph", icon.transform, "AX", 15f, AccentGold, TextAlignmentOptions.Center, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            CreateAnchoredText("[LABEL] ComparisonItemLabel", panel.transform, label, 12f, AccentGold, TextAlignmentOptions.Left | TextAlignmentOptions.Top, Vector2.zero, Vector2.one, new Vector2(54f, -6f), new Vector2(-8f, -20f));
+            CreateAnchoredText("[TEXT] ComparisonItemName", panel.transform, itemName, 15f, leftSide ? AccentGold : TextPrimary, TextAlignmentOptions.Left | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(54f, -22f), new Vector2(-8f, -37f));
+            CreateAnchoredText("[TEXT] ComparisonItemPower", panel.transform, power, 13f, TextSecondary, TextAlignmentOptions.Left | TextAlignmentOptions.Bottom, Vector2.zero, Vector2.one, new Vector2(54f, -44f), new Vector2(-8f, -6f));
+        }
+
+        private static void CreateComparisonStatRow(Transform parent, string stat, string current, string selected, string delta, int row, bool deltaPositive)
+        {
+            var top = -96f - row * 19f;
+            var statRow = CreatePanel("[ROW] Comparison" + stat.Replace(" ", string.Empty).Replace("/", string.Empty) + "Row", parent, new Color(0f, 0f, 0f, 0.05f), Border);
+            SetStretch((RectTransform)statRow.transform, Vector2.zero, Vector2.one, new Vector2(12f, top - 18f), new Vector2(-12f, top));
+            CreateAnchoredText("[TEXT] ComparisonStat", statRow.transform, stat, 12f, TextPrimary, TextAlignmentOptions.Left | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(8f, 0f), new Vector2(-350f, 0f));
+            CreateAnchoredText("[TEXT] ComparisonCurrent", statRow.transform, current, 12f, TextPrimary, TextAlignmentOptions.Right | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(190f, 0f), new Vector2(-260f, 0f));
+            CreateAnchoredText("[TEXT] ComparisonArrow", statRow.transform, ">", 12f, AccentGold, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(-12f, 0f), new Vector2(12f, 0f));
+            CreateAnchoredText("[TEXT] ComparisonSelected", statRow.transform, selected, 12f, TextPrimary, TextAlignmentOptions.Right | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(330f, 0f), new Vector2(-118f, 0f));
+            CreateAnchoredText("[TEXT] ComparisonDelta", statRow.transform, delta, 12f, deltaPositive ? Success : Danger, TextAlignmentOptions.Right | TextAlignmentOptions.Midline, Vector2.zero, Vector2.one, new Vector2(450f, 0f), new Vector2(-8f, 0f));
         }
 
         private static void CreateComparisonLine(Transform parent, string stat, string current, string selected, string delta, int row)
@@ -2270,6 +2296,74 @@ namespace IdleGame.Editor
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             scrollRect.content = content;
             return scroll;
+        }
+
+        private static Transform CreateHorizontalScrollContent(GameObject scroll, string contentName, RectOffset padding, float spacing)
+        {
+            var scrollRect = scroll.AddComponent<ScrollRect>();
+            scrollRect.horizontal = true;
+            scrollRect.vertical = false;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 24f;
+
+            var viewport = CreatePanel("Viewport", scroll.transform, new Color(0f, 0f, 0f, 0.04f), Border);
+            SetStretch((RectTransform)viewport.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            viewport.AddComponent<Mask>().showMaskGraphic = false;
+            scrollRect.viewport = (RectTransform)viewport.transform;
+
+            var contentObject = CreateUIObject(contentName, viewport.transform);
+            var content = (RectTransform)contentObject.transform;
+            SetStretch(content, new Vector2(0f, 0f), new Vector2(0f, 1f), Vector2.zero, Vector2.zero);
+            content.pivot = new Vector2(0f, 0.5f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+
+            var layout = contentObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = padding;
+            layout.spacing = spacing;
+            layout.childControlWidth = false;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
+
+            var fitter = contentObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollRect.content = content;
+            return contentObject.transform;
+        }
+
+        private static Transform CreateVerticalScrollContent(GameObject scroll, string contentName, RectOffset padding, float spacing)
+        {
+            var scrollRect = scroll.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 24f;
+
+            var viewport = CreatePanel("Viewport", scroll.transform, new Color(0f, 0f, 0f, 0.04f), Border);
+            SetStretch((RectTransform)viewport.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            viewport.AddComponent<Mask>().showMaskGraphic = false;
+            scrollRect.viewport = (RectTransform)viewport.transform;
+
+            var contentObject = CreateUIObject(contentName, viewport.transform);
+            var content = (RectTransform)contentObject.transform;
+            SetStretch(content, new Vector2(0f, 1f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+
+            var layout = contentObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = padding;
+            layout.spacing = spacing;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = contentObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollRect.content = content;
+            return contentObject.transform;
         }
 
         private static GameObject CreateSection(string name, Transform parent)
