@@ -10,7 +10,6 @@ namespace IdleGame.UI
         [SerializeField] private string displayName = string.Empty;
         [SerializeField] private string subtitle = string.Empty;
         [SerializeField] private int sortOrder;
-        [SerializeField] private GameObject screenPrefab;
         [SerializeField] private bool visibleInNavigation = true;
         [SerializeField] private bool cacheInstance = true;
 
@@ -18,7 +17,6 @@ namespace IdleGame.UI
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? screenId : displayName;
         public string Subtitle => subtitle;
         public int SortOrder => sortOrder;
-        public GameObject ScreenPrefab => screenPrefab;
         public bool VisibleInNavigation => visibleInNavigation;
         public bool CacheInstance => cacheInstance;
 
@@ -35,7 +33,6 @@ namespace IdleGame.UI
             string title,
             string description,
             int order,
-            GameObject prefab,
             bool showInNavigation = true,
             bool keepInstanceCached = true)
         {
@@ -43,7 +40,6 @@ namespace IdleGame.UI
             displayName = title;
             subtitle = description;
             sortOrder = order;
-            screenPrefab = prefab;
             visibleInNavigation = showInNavigation;
             cacheInstance = keepInstanceCached;
         }

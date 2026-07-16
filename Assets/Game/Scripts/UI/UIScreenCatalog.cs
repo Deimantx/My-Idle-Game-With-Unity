@@ -64,11 +64,6 @@ namespace IdleGame.UI
                     return false;
                 }
 
-                if (screen.ScreenPrefab == null)
-                {
-                    error = $"{screen.name} has no screen prefab.";
-                    return false;
-                }
             }
 
             error = string.Empty;

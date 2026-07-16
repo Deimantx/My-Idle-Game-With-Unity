@@ -17,6 +17,5 @@ MonoBehaviour:
   subtitle: Editable combat screen shell. Combat simulation remains out of scope
     for this UI refactor.
   sortOrder: 10
-  screenPrefab: {fileID: 6342755176158889028, guid: 9cff8ec23f3f28b4683966d8773cfe94, type: 3}
   visibleInNavigation: 1
   cacheInstance: 1

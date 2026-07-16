@@ -17,6 +17,5 @@ MonoBehaviour:
   subtitle: Editable profession screen shell. Woodcutting gameplay is intentionally
     not implemented yet.
   sortOrder: 40
-  screenPrefab: {fileID: 1324802896783326873, guid: f31ad5913721fbd46ab7b9faa8d2702e, type: 3}
   visibleInNavigation: 1
   cacheInstance: 1

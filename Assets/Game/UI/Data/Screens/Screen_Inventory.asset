@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.UI.ScreenDefinition
   screenId: inventory
   displayName: Inventory
-  subtitle: Editable inventory screen shell. Item slots remain future dynamic prefab
+  subtitle: Editable inventory screen shell. Item slots remain future dynamic scene
     content.
   sortOrder: 20
-  screenPrefab: {fileID: 7246076112196633973, guid: eaad42dff1887ea478fea6a65aa17f72, type: 3}
   visibleInNavigation: 1
   cacheInstance: 1

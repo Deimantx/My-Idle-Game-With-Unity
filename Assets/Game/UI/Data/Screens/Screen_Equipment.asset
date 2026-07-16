@@ -16,6 +16,5 @@ MonoBehaviour:
   displayName: Equipment
   subtitle: Editable equipment screen shell with visible slot layout placeholders.
   sortOrder: 30
-  screenPrefab: {fileID: 2689895744924379855, guid: bab3590a65b9deb469e1acbd62e5f5d8, type: 3}
   visibleInNavigation: 1
   cacheInstance: 1

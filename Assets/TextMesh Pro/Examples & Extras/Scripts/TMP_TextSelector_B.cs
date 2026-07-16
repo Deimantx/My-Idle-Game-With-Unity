@@ -12,7 +12,7 @@ namespace TMPro.Examples
 
     public class TMP_TextSelector_B : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IPointerUpHandler
     {
-        public RectTransform TextPopup_Prefab_01;
+        public RectTransform TextPopupTemplate;
 
         private RectTransform m_TextPopup_RectTransform;
         private TextMeshProUGUI m_TextPopup_TMPComponent;
@@ -48,7 +48,10 @@ namespace TMPro.Examples
                 m_Camera = m_Canvas.worldCamera;
 
             // Create pop-up text object which is used to show the link information.
-            m_TextPopup_RectTransform = Instantiate(TextPopup_Prefab_01) as RectTransform;
+            if (TextPopupTemplate == null)
+                return;
+
+            m_TextPopup_RectTransform = Instantiate(TextPopupTemplate) as RectTransform;
             m_TextPopup_RectTransform.SetParent(m_Canvas.transform, false);
             m_TextPopup_TMPComponent = m_TextPopup_RectTransform.GetComponentInChildren<TextMeshProUGUI>();
             m_TextPopup_RectTransform.gameObject.SetActive(false);
@@ -408,7 +411,7 @@ namespace TMPro.Examples
                 {
                     case 291445: // id_01
                         if (m_LinkObject01 == null)
-                            m_LinkObject01 = Instantiate(Link_01_Prefab);
+                            m_LinkObject01 = Instantiate(Link_01_Template);
                         else
                         {
                             m_LinkObject01.gameObject.SetActive(true);

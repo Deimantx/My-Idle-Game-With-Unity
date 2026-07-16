@@ -16,6 +16,5 @@ MonoBehaviour:
   displayName: Settings
   subtitle: Editable settings screen shell for future options.
   sortOrder: 50
-  screenPrefab: {fileID: 2478744522871568707, guid: 77e5ad953cba7bd489fdb6db71d0ac30, type: 3}
   visibleInNavigation: 1
   cacheInstance: 1

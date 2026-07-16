@@ -23,9 +23,6 @@ namespace IdleGame.Editor
         private const string DataFolder = "Assets/Game/UI/Data";
         private const string ScreenDataFolder = "Assets/Game/UI/Data/Screens";
         private const string NavigationDataFolder = "Assets/Game/UI/Data/Navigation";
-        private const string PrefabRoot = "Assets/Game/UI/Prefabs";
-        private const string NavigationPrefabFolder = "Assets/Game/UI/Prefabs/Navigation";
-        private const string ScreenPrefabFolder = "Assets/Game/UI/Prefabs/Screens";
 
         private static readonly Color DeepBackground = HtmlColor("0D1117");
         private static readonly Color MainBackground = HtmlColor("121923");
@@ -73,16 +70,6 @@ namespace IdleGame.Editor
             foreach (var root in scene.GetRootGameObjects())
             {
                 total += ScanMissingScripts(root);
-            }
-
-            foreach (var prefabGuid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Game/UI/Prefabs" }))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(prefabGuid);
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab != null)
-                {
-                    total += ScanMissingScripts(prefab);
-                }
             }
 
             if (total == 0)
@@ -180,15 +167,12 @@ namespace IdleGame.Editor
 
         private static BuildArtifacts CreateAssets()
         {
-            var navigationButtonPrefab = CreateNavigationButtonPrefab();
             var screens = GetScreens();
-
-            var screenPrefabs = screens.ToDictionary(screen => screen.Id, CreateScreenPrefab, StringComparer.Ordinal);
 
             var screenDefinitions = screens
                 .Select(screen => CreateAsset<ScreenDefinition>(
                     $"{ScreenDataFolder}/Screen_{screen.Title}.asset",
-                    asset => asset.ConfigureForEditor(screen.Id, screen.Title, screen.Subtitle, screen.ScreenOrder, screenPrefabs[screen.Id])))
+                    asset => asset.ConfigureForEditor(screen.Id, screen.Title, screen.Subtitle, screen.ScreenOrder)))
                 .ToList();
 
             var screenCatalog = CreateAsset<UIScreenCatalog>(
@@ -229,15 +213,12 @@ namespace IdleGame.Editor
                 $"{DataFolder}/NavigationCatalog.asset",
                 asset => asset.ConfigureForEditor(new[] { mainGroup, professionsGroup, accountGroup }, entries));
 
-            return new BuildArtifacts(screenCatalog, navigationCatalog, navigationButtonPrefab, screenPrefabs);
+            return new BuildArtifacts(screenCatalog, navigationCatalog);
         }
 
-        private static GameObject CreateNavigationButtonPrefab()
+        private static GameObject CreateNavigationButtonObject(string name, Transform parent)
         {
-            var path = $"{NavigationPrefabFolder}/NavigationButton.prefab";
-            DeleteAssetIfExists(path);
-
-            var root = CreateUIObject("[NAV BUTTON] NavigationButton", null);
+            var root = CreateUIObject(name, parent);
             var rect = (RectTransform)root.transform;
             rect.sizeDelta = new Vector2(238f, 52f);
 
@@ -287,17 +268,12 @@ namespace IdleGame.Editor
             var binding = root.AddComponent<NavigationButtonBinding>();
             binding.ConfigureForEditor(string.Empty, button, background.GetComponent<Image>(), selectedMarker.GetComponent<Image>(), icon.GetComponent<Image>(), labelObject.GetComponent<TMP_Text>(), lockIcon.GetComponent<Image>(), badge, badgeTextObject.GetComponent<TMP_Text>());
 
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
-            Object.DestroyImmediate(root);
-            return prefab;
+            return root;
         }
 
-        private static GameObject CreateScreenPrefab(ScreenSpec screen)
+        private static GameObject CreateScreenObject(ScreenSpec screen, Transform parent)
         {
-            var path = $"{ScreenPrefabFolder}/{screen.Title}Screen.prefab";
-            DeleteAssetIfExists(path);
-
-            var root = CreateUIObject($"[SCREEN] {screen.Title}Screen", null);
+            var root = CreateUIObject($"[SCREEN] {screen.Title}Screen", parent);
             SetStretch((RectTransform)root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             AddPanel(root, MainBackground, Border);
             var controller = root.AddComponent<UIScreenController>();
@@ -336,9 +312,7 @@ namespace IdleGame.Editor
                     break;
             }
 
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
-            Object.DestroyImmediate(root);
-            return prefab;
+            return root;
         }
 
         private static GameObject CreateScreenHeader(ScreenSpec screen, Transform parent, out TMP_Text titleText, out TMP_Text subtitleText)
@@ -1538,10 +1512,10 @@ namespace IdleGame.Editor
         private static void CreateInventoryItemInfoLayout(Transform parent)
         {
             var row = CreateUIObject("[LAYOUT] ItemDetailsInfoLayout", parent);
-            AddLayout(row, 260f);
+            AddLayout(row, 316f);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(0, 0, 0, 0);
-            layout.spacing = 8f;
+            layout.spacing = 12f;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
@@ -1550,7 +1524,7 @@ namespace IdleGame.Editor
             var leftColumn = CreateUIObject("[LAYOUT] ItemDetailsLeftColumn", row.transform);
             leftColumn.AddComponent<LayoutElement>().flexibleWidth = 1f;
             var leftLayout = leftColumn.AddComponent<VerticalLayoutGroup>();
-            leftLayout.spacing = 8f;
+            leftLayout.spacing = 14f;
             leftLayout.childControlWidth = true;
             leftLayout.childControlHeight = true;
             leftLayout.childForceExpandWidth = true;
@@ -1564,7 +1538,7 @@ namespace IdleGame.Editor
         private static void CreateInventoryItemStats(Transform parent)
         {
             var stats = CreatePanel("[CONTAINER] ItemStatsContainer", parent, DeepBackground, Border);
-            AddLayout(stats, 124f);
+            AddLayout(stats, 146f);
             CreateAnchoredText("[HEADER] ToolStatsHeader", stats.transform, "TOOL STATS", 17f, AccentGold, TextAlignmentOptions.Left | TextAlignmentOptions.Top, Vector2.zero, Vector2.one, new Vector2(12f, -10f), new Vector2(-12f, -8f));
             CreateStatLine(stats.transform, "Gathering Power", "1,260", 0);
             CreateStatLine(stats.transform, "Durability", "210 / 210", 1, Success);
@@ -1589,7 +1563,7 @@ namespace IdleGame.Editor
         private static void CreateInventoryItemSources(Transform parent)
         {
             var sources = CreatePanel("[CONTAINER] ItemSourcesContainer", parent, DeepBackground, Border);
-            AddLayout(sources, 128f);
+            AddLayout(sources, 156f);
             CreateAnchoredText("[HEADER] SourcesHeader", sources.transform, "SOURCES", 17f, AccentGold, TextAlignmentOptions.Left | TextAlignmentOptions.Top, Vector2.zero, Vector2.one, new Vector2(12f, -10f), new Vector2(-12f, -8f));
             CreateAnchoredText("[TEXT] SourceList", sources.transform, "Smithing (Level 1)\nShop (General Goods)\nWoodcutting Progression Rewards", 15f, TextPrimary, TextAlignmentOptions.Left | TextAlignmentOptions.Top, Vector2.zero, Vector2.one, new Vector2(18f, -42f), new Vector2(-12f, -8f));
         }
@@ -2010,7 +1984,7 @@ namespace IdleGame.Editor
             var shell = uiRoot.AddComponent<PersistentUIShell>();
             shell.ConfigureForEditor((RectTransform)topBar.transform, (RectTransform)leftNavigation.transform, (RectTransform)activeActivityBar.transform, (RectTransform)screenContainer.transform, (RectTransform)dropdownLayer.transform, (RectTransform)tooltipLayer.transform, (RectTransform)notificationLayer.transform, (RectTransform)popupLayer.transform, (RectTransform)modalLayer.transform, (RectTransform)loadingLayer.transform);
 
-            var screenReferences = InstantiateScreens(screenContainer.transform, artifacts);
+            var screenReferences = InstantiateScreens(screenContainer.transform);
 
             var managers = new GameObject("[UI MANAGERS] UIManagers");
             managers.transform.SetParent(uiRoot.transform, false);
@@ -2095,7 +2069,7 @@ namespace IdleGame.Editor
             var mainBody = CreateUIObject("[LAYOUT] MainBody", parent);
             SetStretch((RectTransform)mainBody.transform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(0f, -64f));
 
-            leftNavigation = CreateLeftNavigation(mainBody.transform, artifacts.NavigationButtonPrefab, out navigationButtons, out backButton);
+            leftNavigation = CreateLeftNavigation(mainBody.transform, out navigationButtons, out backButton);
             SetLeftNavigationRect((RectTransform)leftNavigation.transform, 270f);
 
             var contentColumn = CreateUIObject("[LAYOUT] ContentColumn", mainBody.transform);
@@ -2107,7 +2081,7 @@ namespace IdleGame.Editor
             return mainBody;
         }
 
-        private static GameObject CreateLeftNavigation(Transform parent, GameObject buttonPrefab, out List<NavigationButtonBinding> navigationButtons, out Button backButton)
+        private static GameObject CreateLeftNavigation(Transform parent, out List<NavigationButtonBinding> navigationButtons, out Button backButton)
         {
             navigationButtons = new List<NavigationButtonBinding>();
             var nav = CreatePanel("[PERSISTENT] LeftNavigation", parent, MainBackground, Border);
@@ -2129,15 +2103,15 @@ namespace IdleGame.Editor
             scroll.GetComponent<LayoutElement>().flexibleHeight = 1f;
 
             var mainGroup = CreateNavigationGroup("[NAV GROUP] MainGroup", content, "Main");
-            navigationButtons.Add(CreateNavigationButtonInstance(buttonPrefab, mainGroup.transform, ScreenIds.Combat, "Combat"));
-            navigationButtons.Add(CreateNavigationButtonInstance(buttonPrefab, mainGroup.transform, ScreenIds.Inventory, "Inventory"));
-            navigationButtons.Add(CreateNavigationButtonInstance(buttonPrefab, mainGroup.transform, ScreenIds.Equipment, "Equipment"));
+            navigationButtons.Add(CreateNavigationButtonInstance(mainGroup.transform, ScreenIds.Combat, "Combat"));
+            navigationButtons.Add(CreateNavigationButtonInstance(mainGroup.transform, ScreenIds.Inventory, "Inventory"));
+            navigationButtons.Add(CreateNavigationButtonInstance(mainGroup.transform, ScreenIds.Equipment, "Equipment"));
 
             var professionGroup = CreateNavigationGroup("[NAV GROUP] ProfessionsGroup", content, "Professions");
-            navigationButtons.Add(CreateNavigationButtonInstance(buttonPrefab, professionGroup.transform, ScreenIds.Woodcutting, "Woodcutting"));
+            navigationButtons.Add(CreateNavigationButtonInstance(professionGroup.transform, ScreenIds.Woodcutting, "Woodcutting"));
 
             var accountGroup = CreateNavigationGroup("[NAV GROUP] AccountGroup", content, "Account");
-            navigationButtons.Add(CreateNavigationButtonInstance(buttonPrefab, accountGroup.transform, ScreenIds.Settings, "Settings"));
+            navigationButtons.Add(CreateNavigationButtonInstance(accountGroup.transform, ScreenIds.Settings, "Settings"));
 
             var back = CreateButton("[BUTTON] BackNavigationButton", nav.transform, "Back", 0f, PanelBackground);
             AddLayout(back, 48f);
@@ -2200,14 +2174,12 @@ namespace IdleGame.Editor
             rectTransform.localScale = Vector3.one;
         }
 
-        private static IReadOnlyList<UIScreenReference> InstantiateScreens(Transform screenContainer, BuildArtifacts artifacts)
+        private static IReadOnlyList<UIScreenReference> InstantiateScreens(Transform screenContainer)
         {
             var screenReferences = new List<UIScreenReference>();
             foreach (var screen in GetScreens())
             {
-                var prefab = artifacts.ScreenPrefabs[screen.Id];
-                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, screenContainer);
-                instance.name = $"[SCREEN] {screen.Title}Screen";
+                var instance = CreateScreenObject(screen, screenContainer);
                 SetStretch((RectTransform)instance.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
                 instance.SetActive(screen.Id == ScreenIds.Woodcutting);
                 var reference = instance.GetComponent<UIScreenReference>();
@@ -2222,10 +2194,9 @@ namespace IdleGame.Editor
             return screenReferences;
         }
 
-        private static NavigationButtonBinding CreateNavigationButtonInstance(GameObject prefab, Transform parent, string screenId, string label)
+        private static NavigationButtonBinding CreateNavigationButtonInstance(Transform parent, string screenId, string label)
         {
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
-            instance.name = $"[NAV BUTTON] {label}Button";
+            var instance = CreateNavigationButtonObject($"[NAV BUTTON] {label}Button", parent);
             var binding = instance.GetComponent<NavigationButtonBinding>();
             var button = instance.GetComponent<Button>();
             var background = FindChild<Image>(instance.transform, "[IMAGE] Background");
@@ -2408,7 +2379,7 @@ namespace IdleGame.Editor
         {
             var container = CreatePanel(name, parent, DeepBackground, Border);
             AddLayout(container, height);
-            CreateText("[TEXT] DynamicContentNote", container.transform, "Runtime entries use editable prefabs here.", 18f, TextSecondary, TextAlignmentOptions.Center);
+            CreateText("[TEXT] DynamicContentNote", container.transform, "Runtime entries use scene-authored templates here.", 18f, TextSecondary, TextAlignmentOptions.Center);
         }
 
         private static void CreateActionRow(string name, Transform parent, IReadOnlyList<(string Name, string Label, Color Color)> buttons)
@@ -2664,9 +2635,6 @@ namespace IdleGame.Editor
             EnsureFolder(DataFolder);
             EnsureFolder(ScreenDataFolder);
             EnsureFolder(NavigationDataFolder);
-            EnsureFolder(PrefabRoot);
-            EnsureFolder(NavigationPrefabFolder);
-            EnsureFolder(ScreenPrefabFolder);
         }
 
         private static void EnsureFolder(string folderPath)
@@ -2760,7 +2728,7 @@ namespace IdleGame.Editor
             return new[]
             {
                 new ScreenSpec(ScreenIds.Combat, "Combat", "Editable combat screen shell. Combat simulation remains out of scope for this UI refactor.", "main", 10, 10),
-                new ScreenSpec(ScreenIds.Inventory, "Inventory", "Editable inventory screen shell. Item slots remain future dynamic prefab content.", "main", 20, 20),
+                new ScreenSpec(ScreenIds.Inventory, "Inventory", "Editable inventory screen shell. Item slots remain future dynamic scene content.", "main", 20, 20),
                 new ScreenSpec(ScreenIds.Equipment, "Equipment", "Editable equipment screen shell with visible slot layout placeholders.", "main", 30, 30),
                 new ScreenSpec(ScreenIds.Woodcutting, "Woodcutting", "Editable profession screen shell. Woodcutting gameplay is intentionally not implemented yet.", "professions", 40, 10),
                 new ScreenSpec(ScreenIds.Settings, "Settings", "Editable settings screen shell for future options.", "account", 50, 10)
@@ -2789,18 +2757,14 @@ namespace IdleGame.Editor
 
         private readonly struct BuildArtifacts
         {
-            public BuildArtifacts(UIScreenCatalog screenCatalog, NavigationCatalog navigationCatalog, GameObject navigationButtonPrefab, IReadOnlyDictionary<string, GameObject> screenPrefabs)
+            public BuildArtifacts(UIScreenCatalog screenCatalog, NavigationCatalog navigationCatalog)
             {
                 ScreenCatalog = screenCatalog;
                 NavigationCatalog = navigationCatalog;
-                NavigationButtonPrefab = navigationButtonPrefab;
-                ScreenPrefabs = screenPrefabs;
             }
 
             public UIScreenCatalog ScreenCatalog { get; }
             public NavigationCatalog NavigationCatalog { get; }
-            public GameObject NavigationButtonPrefab { get; }
-            public IReadOnlyDictionary<string, GameObject> ScreenPrefabs { get; }
         }
     }
 }
