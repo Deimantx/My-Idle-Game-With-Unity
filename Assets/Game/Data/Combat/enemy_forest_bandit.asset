@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8cd3a10334b7064cb4a94d0a5a8c2cf, type: 3}
+  m_Name: enemy_forest_bandit
+  m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.Combat.CombatEnemyDefinition
+  enemyId: enemy_forest_bandit
+  displayName: Forest Bandit
+  description: A low-level outlaw preying on Greenvale travelers.
+  requiredWarriorLevel: 5
+  maximumHealth: 120
+  minDamage: 4
+  maxDamage: 7
+  attackInterval: 2.6
+  accuracy: 55
+  defense: 18
+  criticalChance: 0.05
+  criticalDamageMultiplier: 1.5
+  warriorXpCoefficient: 1.4
+  respawnSeconds: 4
+  minGold: 8
+  maxGold: 15
+  loot:
+  - itemId: item_cloth_scrap
+    chance: 0.6
+    minQuantity: 1
+    maxQuantity: 2
+    important: 0
+  - itemId: weapon_rusted_dagger
+    chance: 0.1
+    minQuantity: 1
+    maxQuantity: 1
+    important: 1
+  firstClearRewards:
+  - itemId: shield_worn_buckler
+    chance: 1
+    minQuantity: 1
+    maxQuantity: 1
+    important: 1

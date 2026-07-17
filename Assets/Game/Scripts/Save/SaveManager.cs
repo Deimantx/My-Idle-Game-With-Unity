@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using IdleGame.Core.Bootstrap;
+using IdleGame.Combat;
 using IdleGame.Equipment;
 using IdleGame.Inventory;
 using IdleGame.Professions.Woodcutting;
@@ -16,6 +17,7 @@ namespace IdleGame.Save
         [SerializeField] private EquipmentSystem equipmentSystem;
         [SerializeField] private ProfessionProgressionSystem progressionSystem;
         [SerializeField] private WoodcuttingSystem woodcuttingSystem;
+        [SerializeField] private CombatSystem combatSystem;
 
         public static SaveManager Instance { get; private set; }
 
@@ -56,6 +58,11 @@ namespace IdleGame.Save
                 Data.woodcutting = woodcuttingSystem.CreateSaveData();
             }
 
+            if (combatSystem != null)
+            {
+                Data.combat = combatSystem.CreateSaveData();
+            }
+
             Data.lastSaveUtc = DateTime.UtcNow.ToString("O");
             Directory.CreateDirectory(Application.persistentDataPath);
 
@@ -89,6 +96,11 @@ namespace IdleGame.Save
             woodcuttingSystem = woodcutting;
         }
 
+        public void ConfigureCombatForEditor(CombatSystem combat)
+        {
+            combatSystem = combat;
+        }
+
         private void LoadFromDisk()
         {
             Data = File.Exists(SavePath)
@@ -99,6 +111,7 @@ namespace IdleGame.Save
             Data.equipment ??= new EquipmentSaveData();
             Data.professions ??= new ProfessionSaveData();
             Data.woodcutting ??= new WoodcuttingSaveData();
+            Data.combat ??= new CombatSaveData();
         }
 
         private static GameSaveData TryLoadFile(string path)

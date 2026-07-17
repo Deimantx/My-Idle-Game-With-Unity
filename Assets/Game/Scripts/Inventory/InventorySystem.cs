@@ -13,6 +13,7 @@ namespace IdleGame.Inventory
     {
         [SerializeField] private ItemDatabase itemDatabase;
         [SerializeField] private int capacity = 100;
+        [SerializeField] private long gold = 50;
         [SerializeField] private List<InventoryStack> stacks = new();
 
         public event Action InventoryChanged;
@@ -20,6 +21,7 @@ namespace IdleGame.Inventory
 
         public int InitializationOrder => 10;
         public int Capacity => capacity;
+        public long Gold => gold;
         public int UsedSlots => stacks.Count(stack => stack != null && stack.quantity > 0);
         public int FreeSlots => Mathf.Max(0, capacity - UsedSlots);
         public IReadOnlyList<InventoryStack> Stacks => stacks;
@@ -118,6 +120,53 @@ namespace IdleGame.Inventory
             return true;
         }
 
+        public bool TryRemoveItem(string itemId, long quantity)
+        {
+            if (quantity <= 0)
+            {
+                return true;
+            }
+
+            if (GetQuantity(itemId) < quantity)
+            {
+                return false;
+            }
+
+            var remaining = quantity;
+            for (var i = stacks.Count - 1; i >= 0 && remaining > 0; i--)
+            {
+                var stack = stacks[i];
+                if (stack == null || stack.itemId != itemId || stack.quantity <= 0)
+                {
+                    continue;
+                }
+
+                var removed = Math.Min(stack.quantity, remaining);
+                stack.quantity -= removed;
+                remaining -= removed;
+                if (stack.quantity <= 0)
+                {
+                    stacks.RemoveAt(i);
+                }
+            }
+
+            InventoryChanged?.Invoke();
+            SaveManager.Instance?.SaveNow();
+            return true;
+        }
+
+        public void AddGold(long amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            gold += amount;
+            InventoryChanged?.Invoke();
+            SaveManager.Instance?.SaveNow();
+        }
+
         public long GetQuantity(string itemId)
         {
             return stacks.Where(stack => stack != null && stack.itemId == itemId).Sum(stack => Math.Max(0, stack.quantity));
@@ -128,6 +177,7 @@ namespace IdleGame.Inventory
             return new InventorySaveData
             {
                 capacity = capacity,
+                gold = gold,
                 stacks = stacks
                     .Where(stack => stack != null && stack.quantity > 0 && StableId.IsValid(stack.itemId))
                     .Select(stack => new InventoryStackSaveData
@@ -146,9 +196,11 @@ namespace IdleGame.Inventory
         {
             stacks.Clear();
             capacity = saveData != null && saveData.capacity > 0 ? saveData.capacity : 100;
+            gold = saveData != null ? Math.Max(0, saveData.gold) : 50;
 
             if (saveData?.stacks == null)
             {
+                EnsureNewSaveStartingItems();
                 return;
             }
 
@@ -167,6 +219,7 @@ namespace IdleGame.Inventory
                 });
             }
 
+            EnsureNewSaveStartingItems();
             InventoryChanged?.Invoke();
         }
 
@@ -174,6 +227,17 @@ namespace IdleGame.Inventory
         {
             itemDatabase = database;
             capacity = startingCapacity;
+        }
+
+        private void EnsureNewSaveStartingItems()
+        {
+            if (stacks.Count == 0)
+            {
+                if (itemDatabase != null && itemDatabase.TryGetItem("consumable_minor_healing_potion", out _))
+                {
+                    stacks.Add(new InventoryStack("consumable_minor_healing_potion", 5));
+                }
+            }
         }
     }
 }

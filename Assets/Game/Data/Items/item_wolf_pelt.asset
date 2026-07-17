@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe3510f7dd022a643b23592cda1b38cc, type: 3}
+  m_Name: item_wolf_pelt
+  m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.Items.ItemDefinition
+  itemId: item_wolf_pelt
+  displayName: Wolf Pelt
+  description: A rough pelt suitable for future leatherworking.
+  category: 3
+  itemType: Hide
+  icon: {fileID: 0}
+  stackable: 1
+  maxStack: 999999
+  sellValue: 4
+  canBeSold: 1
+  canBeDestroyed: 1

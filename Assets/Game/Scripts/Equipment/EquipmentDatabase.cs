@@ -13,6 +13,8 @@ namespace IdleGame.Equipment
 
         private Dictionary<string, EquipmentDefinition> lookup;
 
+        public IReadOnlyList<EquipmentDefinition> Equipment => equipment;
+
         public bool TryGetEquipment(string itemId, out EquipmentDefinition definition)
         {
             BuildLookupIfNeeded();

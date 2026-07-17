@@ -139,6 +139,11 @@ namespace IdleGame.Professions.Woodcutting
 
         public bool StartWoodcutting()
         {
+            if (IsActive)
+            {
+                return true;
+            }
+
             if (selectedTree == null || !IsTreeUnlocked(selectedTree))
             {
                 Notification?.Invoke(selectedTree == null
@@ -153,7 +158,12 @@ namespace IdleGame.Professions.Woodcutting
                 return false;
             }
 
-            activeActivityService?.RequestStartPrimary(WoodcuttingConstants.ActivityId, "Woodcutting", selectedTree.DisplayName);
+            if (activeActivityService != null && !activeActivityService.RequestStartPrimary(WoodcuttingConstants.ActivityId, "Woodcutting", selectedTree.DisplayName))
+            {
+                Notification?.Invoke($"{activeActivityService.ActiveActivityName} is already active. Stop it before starting Woodcutting.");
+                return false;
+            }
+
             IsActive = true;
             StateChanged?.Invoke();
             SaveManager.Instance?.SaveNow();

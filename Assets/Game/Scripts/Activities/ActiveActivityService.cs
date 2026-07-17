@@ -13,6 +13,7 @@ namespace IdleGame.Activities
         public string ActiveActivityId { get; private set; } = string.Empty;
         public string ActiveActivityName { get; private set; } = "No Active Activity";
         public string ActiveTargetName { get; private set; } = string.Empty;
+        public bool HasActiveActivity => !string.IsNullOrWhiteSpace(ActiveActivityId);
 
         public void InitializeService()
         {
@@ -20,12 +21,23 @@ namespace IdleGame.Activities
 
         public bool RequestStartPrimary(string activityId, string activityName, string targetName)
         {
+            if (!CanStartPrimary(activityId))
+            {
+                return false;
+            }
+
             ActiveActivityId = activityId;
             ActiveActivityName = activityName;
             ActiveTargetName = targetName;
             ActiveActivityChanged?.Invoke();
             SaveManager.Instance?.SaveNow();
             return true;
+        }
+
+        public bool CanStartPrimary(string activityId)
+        {
+            return string.IsNullOrWhiteSpace(ActiveActivityId) ||
+                   string.Equals(ActiveActivityId, activityId, StringComparison.Ordinal);
         }
 
         public void Stop(string activityId)

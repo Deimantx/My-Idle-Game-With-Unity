@@ -1,4 +1,5 @@
 using IdleGame.Activities;
+using IdleGame.Combat;
 using IdleGame.Professions.Woodcutting;
 using IdleGame.Progression;
 using IdleGame.UI.Shared;
@@ -12,6 +13,7 @@ namespace IdleGame.UI.Woodcutting
     {
         [SerializeField] private ActiveActivityService activeActivityService;
         [SerializeField] private WoodcuttingSystem woodcuttingSystem;
+        [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private ProfessionProgressionSystem progressionSystem;
         [SerializeField] private ScreenManager screenManager;
         [SerializeField] private Transform noActivityState;
@@ -25,9 +27,20 @@ namespace IdleGame.UI.Woodcutting
         [SerializeField] private RuntimeFillBar professionProgressBar;
         [SerializeField] private Button openProfessionButton;
         [SerializeField] private Button stopProfessionButton;
+        [SerializeField] private TMP_Text combatDisciplineText;
+        [SerializeField] private TMP_Text combatEnemyText;
+        [SerializeField] private RuntimeFillBar compactPlayerHealthBar;
+        [SerializeField] private RuntimeFillBar compactDevotionBar;
+        [SerializeField] private RuntimeFillBar compactEnemyHealthBar;
+        [SerializeField] private Button openCombatButton;
+        [SerializeField] private TMP_Text openCombatButtonText;
+        [SerializeField] private Image openCombatButtonImage;
+        [SerializeField] private Button quitCombatButton;
+        [SerializeField] private TMP_Text quitCombatButtonText;
 
         private float activeSeconds;
         private bool wasWoodcuttingActive;
+        private Color openCombatNormalColor = new(0.1f, 0.14f, 0.19f, 1f);
 
         private void Awake()
         {
@@ -46,9 +59,19 @@ namespace IdleGame.UI.Woodcutting
                 woodcuttingSystem.StateChanged += Refresh;
             }
 
+            if (combatSystem != null)
+            {
+                combatSystem.StateChanged += Refresh;
+            }
+
             if (progressionSystem != null)
             {
                 progressionSystem.ProgressChanged += OnProgressChanged;
+            }
+
+            if (screenManager != null)
+            {
+                screenManager.ScreenChanged += OnScreenChanged;
             }
 
             Refresh();
@@ -66,9 +89,19 @@ namespace IdleGame.UI.Woodcutting
                 woodcuttingSystem.StateChanged -= Refresh;
             }
 
+            if (combatSystem != null)
+            {
+                combatSystem.StateChanged -= Refresh;
+            }
+
             if (progressionSystem != null)
             {
                 progressionSystem.ProgressChanged -= OnProgressChanged;
+            }
+
+            if (screenManager != null)
+            {
+                screenManager.ScreenChanged -= OnScreenChanged;
             }
         }
 
@@ -98,6 +131,20 @@ namespace IdleGame.UI.Woodcutting
             professionProgressBar ??= HierarchySearch.FindOrAddFillBar(transform, "[BAR] ProfessionProgressBar");
             openProfessionButton ??= HierarchySearch.FindButton(transform, "[BUTTON] OpenProfessionButton");
             stopProfessionButton ??= HierarchySearch.FindButton(transform, "[BUTTON] StopProfessionButton");
+            combatDisciplineText ??= HierarchySearch.FindText(transform, "[TEXT] CombatDisciplineText");
+            combatEnemyText ??= HierarchySearch.FindText(transform, "[TEXT] CombatEnemyText");
+            compactPlayerHealthBar ??= HierarchySearch.FindOrAddFillBar(transform, "[BAR] CompactPlayerHealthBar");
+            compactDevotionBar ??= HierarchySearch.FindOrAddFillBar(transform, "[BAR] CompactDevotionBar");
+            compactEnemyHealthBar ??= HierarchySearch.FindOrAddFillBar(transform, "[BAR] CompactEnemyHealthBar");
+            openCombatButton ??= HierarchySearch.FindButton(transform, "[BUTTON] OpenCombatButton");
+            openCombatButtonText ??= HierarchySearch.FindText(openCombatButton != null ? openCombatButton.transform : null, "[TEXT] Label");
+            openCombatButtonImage ??= openCombatButton != null ? openCombatButton.GetComponent<Image>() : null;
+            quitCombatButton ??= HierarchySearch.FindButton(transform, "[BUTTON] QuitCombatButton");
+            quitCombatButtonText ??= HierarchySearch.FindText(quitCombatButton != null ? quitCombatButton.transform : null, "[TEXT] Label");
+            if (openCombatButtonImage != null && openCombatButtonImage.color.a > 0f)
+            {
+                openCombatNormalColor = openCombatButtonImage.color;
+            }
 
             if (openProfessionButton != null)
             {
@@ -110,11 +157,29 @@ namespace IdleGame.UI.Woodcutting
                 stopProfessionButton.onClick.RemoveListener(StopWoodcutting);
                 stopProfessionButton.onClick.AddListener(StopWoodcutting);
             }
+
+            if (openCombatButton != null)
+            {
+                openCombatButton.onClick.RemoveListener(OpenCombat);
+                openCombatButton.onClick.AddListener(OpenCombat);
+            }
+
+            if (quitCombatButton != null)
+            {
+                quitCombatButton.onClick.RemoveListener(QuitCombat);
+                quitCombatButton.onClick.AddListener(QuitCombat);
+            }
+
+            if (quitCombatButtonText != null)
+            {
+                quitCombatButtonText.text = "Leave Combat";
+            }
         }
 
         private void Update()
         {
             var isWoodcutting = woodcuttingSystem != null && woodcuttingSystem.IsActive;
+            var isCombat = combatSystem != null && combatSystem.IsActive;
             if (!isWoodcutting)
             {
                 wasWoodcuttingActive = false;
@@ -134,20 +199,28 @@ namespace IdleGame.UI.Woodcutting
         private void Refresh()
         {
             var isWoodcutting = woodcuttingSystem != null && woodcuttingSystem.IsActive;
+            var isCombat = combatSystem != null && combatSystem.IsActive;
 
             if (noActivityState != null)
             {
-                noActivityState.gameObject.SetActive(!isWoodcutting);
+                noActivityState.gameObject.SetActive(!isWoodcutting && !isCombat);
             }
 
             if (professionActivityState != null)
             {
-                professionActivityState.gameObject.SetActive(isWoodcutting);
+                professionActivityState.gameObject.SetActive(isWoodcutting && !isCombat);
             }
 
             if (combatActivityState != null)
             {
-                combatActivityState.gameObject.SetActive(false);
+                combatActivityState.gameObject.SetActive(isCombat);
+            }
+
+            if (isCombat)
+            {
+                RefreshCombat();
+                RefreshCombatOpenButton();
+                return;
             }
 
             if (!isWoodcutting || woodcuttingSystem.SelectedTree == null)
@@ -205,6 +278,78 @@ namespace IdleGame.UI.Woodcutting
         private void StopWoodcutting()
         {
             woodcuttingSystem?.StopWoodcutting();
+        }
+
+        private void OpenCombat()
+        {
+            screenManager?.OpenScreen(ScreenIds.Combat);
+        }
+
+        private void QuitCombat()
+        {
+            combatSystem?.QuitCombat();
+        }
+
+        public void ConfigureCombatForEditor(CombatSystem combat)
+        {
+            combatSystem = combat;
+            AutoBind();
+        }
+
+        private void RefreshCombat()
+        {
+            if (combatSystem == null || combatSystem.SelectedEnemy == null)
+            {
+                return;
+            }
+
+            var stats = combatSystem.PlayerStats;
+            if (combatDisciplineText != null)
+            {
+                combatDisciplineText.text = "Combat - Warrior";
+            }
+
+            if (combatEnemyText != null)
+            {
+                combatEnemyText.text = combatSystem.SelectedEnemy.DisplayName;
+            }
+
+            compactPlayerHealthBar?.SetValue(
+                stats.MaxHealth <= 0 ? 0f : (float)combatSystem.PlayerHealth / stats.MaxHealth,
+                $"HP {combatSystem.PlayerHealth} / {stats.MaxHealth}");
+            compactDevotionBar?.SetValue(
+                stats.MaxDevotion <= 0 ? 0f : combatSystem.PlayerDevotion / stats.MaxDevotion,
+                $"Devotion {Mathf.FloorToInt(combatSystem.PlayerDevotion)} / {stats.MaxDevotion}");
+            compactEnemyHealthBar?.SetValue(
+                combatSystem.SelectedEnemy.MaximumHealth <= 0 ? 0f : (float)combatSystem.EnemyHealth / combatSystem.SelectedEnemy.MaximumHealth,
+                $"{combatSystem.EnemyHealth} / {combatSystem.SelectedEnemy.MaximumHealth}");
+        }
+
+        private void RefreshCombatOpenButton()
+        {
+            if (openCombatButton == null)
+            {
+                return;
+            }
+
+            var viewingCombat = screenManager != null && screenManager.CurrentScreenId == ScreenIds.Combat;
+            openCombatButton.interactable = !viewingCombat;
+            if (openCombatButtonText != null)
+            {
+                openCombatButtonText.text = viewingCombat ? "Viewing Combat" : "Open";
+            }
+
+            if (openCombatButtonImage != null)
+            {
+                openCombatButtonImage.color = viewingCombat
+                    ? new Color(0.2f, 0.18f, 0.11f, 1f)
+                    : openCombatNormalColor;
+            }
+        }
+
+        private void OnScreenChanged(string _)
+        {
+            Refresh();
         }
 
         private void OnProgressChanged(string professionId)

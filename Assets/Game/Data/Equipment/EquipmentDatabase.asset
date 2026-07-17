@@ -12,4 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9bf0bdf1c147df418c69891c2c4ce60, type: 3}
   m_Name: EquipmentDatabase
   m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.Equipment.EquipmentDatabase
-  equipment: []
+  equipment:
+  - {fileID: 11400000, guid: e91b1043163d19d48a9b2a4990026de3, type: 2}
+  - {fileID: 11400000, guid: b6a694e7904415243b106a93ec8c4531, type: 2}
+  - {fileID: 11400000, guid: 43ce94a44b889844791941344e08f8d7, type: 2}

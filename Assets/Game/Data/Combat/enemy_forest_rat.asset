@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8cd3a10334b7064cb4a94d0a5a8c2cf, type: 3}
+  m_Name: enemy_forest_rat
+  m_EditorClassIdentifier: IdleGame.Runtime::IdleGame.Combat.CombatEnemyDefinition
+  enemyId: enemy_forest_rat
+  displayName: Forest Rat
+  description: A nervous forest scavenger. Weak, fast to defeat, and good first training.
+  requiredWarriorLevel: 1
+  maximumHealth: 30
+  minDamage: 2
+  maxDamage: 4
+  attackInterval: 2.4
+  accuracy: 35
+  defense: 5
+  criticalChance: 0
+  criticalDamageMultiplier: 1.5
+  warriorXpCoefficient: 1
+  respawnSeconds: 2
+  minGold: 1
+  maxGold: 3
+  loot:
+  - itemId: item_raw_meat
+    chance: 0.5
+    minQuantity: 1
+    maxQuantity: 1
+    important: 0
+  - itemId: item_rat_tail
+    chance: 0.25
+    minQuantity: 1
+    maxQuantity: 1
+    important: 0
+  firstClearRewards:
+  - itemId: consumable_minor_healing_potion
+    chance: 1
+    minQuantity: 1
+    maxQuantity: 1
+    important: 1

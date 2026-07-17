@@ -11,6 +11,7 @@ namespace IdleGame.Save
         public EquipmentSaveData equipment = new();
         public ProfessionSaveData professions = new();
         public WoodcuttingSaveData woodcutting = new();
+        public CombatSaveData combat = new();
         public string lastSaveUtc = string.Empty;
     }
 
@@ -18,6 +19,7 @@ namespace IdleGame.Save
     public sealed class InventorySaveData
     {
         public int capacity = 100;
+        public long gold = 50;
         public List<InventoryStackSaveData> stacks = new();
     }
 
@@ -62,5 +64,25 @@ namespace IdleGame.Save
         public bool isRespawning;
         public float respawnRemainingSeconds;
         public List<string> completedThresholdKeys = new();
+    }
+
+    [Serializable]
+    public sealed class CombatSaveData
+    {
+        public string selectedRegionId = "region_greenvale";
+        public string selectedActivityTypeId = "combat_type_areas";
+        public string selectedLocationId = "location_greenvale_forest";
+        public string selectedEnemyId = "enemy_forest_rat";
+        public bool autoRepeat = true;
+        public bool heavyStrikeAutoUse = true;
+        public List<string> firstClearEnemyIds = new();
+        public List<CombatKillCountSaveData> killCounts = new();
+    }
+
+    [Serializable]
+    public sealed class CombatKillCountSaveData
+    {
+        public string enemyId = string.Empty;
+        public int count;
     }
 }
