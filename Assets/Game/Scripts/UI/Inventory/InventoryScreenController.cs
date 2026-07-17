@@ -5,6 +5,7 @@ using IdleGame.Items;
 using IdleGame.UI.Shared;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace IdleGame.UI.Inventory
 {
@@ -19,6 +20,7 @@ namespace IdleGame.UI.Inventory
         [SerializeField] private TMP_Text selectedItemQuantityText;
         [SerializeField] private TMP_Text selectedItemDescriptionText;
         [SerializeField] private TMP_Text selectedItemGlyphText;
+        [SerializeField] private Image selectedItemIconImage;
         [SerializeField] private TMP_Text sellValueText;
         [SerializeField] private TMP_Text itemStatsText;
         [SerializeField] private TMP_Text sourceListText;
@@ -71,7 +73,31 @@ namespace IdleGame.UI.Inventory
             selectedItemCategoryText ??= HierarchySearch.FindText(transform, "[TEXT] ItemCategory");
             selectedItemQuantityText ??= HierarchySearch.FindText(transform, "[TEXT] ItemQuantity");
             selectedItemDescriptionText ??= HierarchySearch.FindText(transform, "[TEXT] ItemDescription");
-            selectedItemGlyphText ??= HierarchySearch.FindText(transform, "[TEXT] ItemGlyph");
+            var selectedItemSection = HierarchySearch.FindDeep(transform, "[SECTION] SelectedInventoryItemSection");
+            var detailsGlyph = HierarchySearch.FindText(selectedItemSection, "[TEXT] ItemGlyph");
+            var detailsIcon = HierarchySearch.FindImage(selectedItemSection, "[IMAGE] ItemIcon");
+            if (detailsGlyph != null)
+            {
+                selectedItemGlyphText = detailsGlyph;
+            }
+            else
+            {
+                selectedItemGlyphText ??= HierarchySearch.FindText(transform, "[TEXT] ItemGlyph");
+            }
+
+            if (detailsIcon != null)
+            {
+                selectedItemIconImage = detailsIcon;
+            }
+            else if (selectedItemIconImage == null && selectedItemGlyphText != null)
+            {
+                selectedItemIconImage = selectedItemGlyphText.GetComponentInParent<Image>();
+            }
+
+            if (selectedItemIconImage == null)
+            {
+                selectedItemIconImage = HierarchySearch.FindImage(selectedItemSection, "[IMAGE] ItemIcon");
+            }
             sellValueText ??= HierarchySearch.FindText(transform, "[TEXT] SellValue");
             itemStatsText ??= HierarchySearch.FindText(transform, "[TEXT] ItemStats");
             sourceListText ??= HierarchySearch.FindText(transform, "[TEXT] SourceList");
@@ -165,6 +191,14 @@ namespace IdleGame.UI.Inventory
             if (selectedItemGlyphText != null)
             {
                 selectedItemGlyphText.text = MakeGlyph(item);
+                selectedItemGlyphText.gameObject.SetActive(item.Icon == null);
+            }
+
+            if (selectedItemIconImage != null)
+            {
+                selectedItemIconImage.sprite = item.Icon;
+                selectedItemIconImage.preserveAspect = true;
+                selectedItemIconImage.color = item.Icon == null ? new Color(0.075f, 0.095f, 0.10f, 0.98f) : Color.white;
             }
 
             if (sellValueText != null)
@@ -189,7 +223,15 @@ namespace IdleGame.UI.Inventory
             if (selectedItemCategoryText != null) selectedItemCategoryText.text = string.Empty;
             if (selectedItemQuantityText != null) selectedItemQuantityText.text = string.Empty;
             if (selectedItemDescriptionText != null) selectedItemDescriptionText.text = "Gain items from Woodcutting to fill your inventory.";
-            if (selectedItemGlyphText != null) selectedItemGlyphText.text = string.Empty;
+            if (selectedItemGlyphText != null)
+            {
+                selectedItemGlyphText.text = string.Empty;
+                selectedItemGlyphText.gameObject.SetActive(true);
+            }
+            if (selectedItemIconImage != null)
+            {
+                selectedItemIconImage.sprite = null;
+            }
             if (sellValueText != null) sellValueText.text = "0";
             if (itemStatsText != null) itemStatsText.text = string.Empty;
             if (sourceListText != null) sourceListText.text = string.Empty;

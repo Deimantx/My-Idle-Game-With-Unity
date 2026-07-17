@@ -60,6 +60,11 @@ namespace IdleGame.UI
                 return false;
             }
 
+            if (screenLookup.Count == 0 || !screenLookup.ContainsKey(screenId))
+            {
+                BuildLookup();
+            }
+
             if (!screenLookup.TryGetValue(screenId, out var requestedScreen) || requestedScreen == null)
             {
                 throw new KeyNotFoundException($"Screen '{screenId}' is not assigned to {nameof(ScreenManager)}.");
@@ -116,6 +121,11 @@ namespace IdleGame.UI
             if (!initialized)
             {
                 InitializeService();
+            }
+
+            if (screenLookup.Count == 0 || !screenLookup.ContainsKey(screenId))
+            {
+                BuildLookup();
             }
 
             return screenLookup.TryGetValue(screenId, out var screenReference) ? screenReference : null;

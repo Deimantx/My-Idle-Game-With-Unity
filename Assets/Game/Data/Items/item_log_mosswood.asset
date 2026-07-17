@@ -17,7 +17,7 @@ MonoBehaviour:
   description: A damp log covered with traces of forest moss.
   category: 0
   itemType: Log
-  icon: {fileID: 0}
+  icon: {fileID: 7806206183306855433, guid: 7cff57ec75592434c8c41c1dd3a4edaf, type: 3}
   stackable: 1
   maxStack: 999999
   sellValue: 2

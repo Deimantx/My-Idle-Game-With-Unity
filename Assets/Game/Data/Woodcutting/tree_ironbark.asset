@@ -15,6 +15,7 @@ MonoBehaviour:
   treeId: tree_ironbark
   displayName: Ironbark Tree
   description: A dense tree with unusually hard bark.
+  icon: {fileID: -882341272688067090, guid: 44e75b9ff433d53438e9436d8e6f9f6e, type: 3}
   requiredLevel: 10
   maximumDurability: 75
   respawnSeconds: 5

@@ -15,6 +15,7 @@ MonoBehaviour:
   treeId: tree_mosswood
   displayName: Mosswood Tree
   description: A damp forest tree covered with thick moss and resin.
+  icon: {fileID: 9062786545563601590, guid: c9510fe2704c97e4299275dddd6ec80b, type: 3}
   requiredLevel: 5
   maximumDurability: 45
   respawnSeconds: 4

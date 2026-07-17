@@ -11,6 +11,7 @@ namespace IdleGame.Professions.Woodcutting
         [SerializeField] private string treeId = string.Empty;
         [SerializeField] private string displayName = string.Empty;
         [SerializeField, TextArea] private string description = string.Empty;
+        [SerializeField] private Sprite icon;
         [SerializeField] private int requiredLevel = 1;
         [SerializeField] private float maximumDurability = 25f;
         [SerializeField] private float respawnSeconds = 3f;
@@ -20,6 +21,7 @@ namespace IdleGame.Professions.Woodcutting
         public string TreeId => treeId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? treeId : displayName;
         public string Description => description;
+        public Sprite Icon => icon;
         public int RequiredLevel => requiredLevel;
         public float MaximumDurability => maximumDurability;
         public float RespawnSeconds => respawnSeconds;

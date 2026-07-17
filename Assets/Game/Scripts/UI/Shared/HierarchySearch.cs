@@ -40,6 +40,11 @@ namespace IdleGame.UI.Shared
             return FindDeep(root, name)?.GetComponent<Button>();
         }
 
+        public static Image FindImage(Transform root, string name)
+        {
+            return FindDeep(root, name)?.GetComponent<Image>();
+        }
+
         public static RuntimeFillBar FindOrAddFillBar(Transform root, string barName)
         {
             var bar = FindDeep(root, barName);

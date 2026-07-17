@@ -17,7 +17,7 @@ MonoBehaviour:
   description: A dense log with unusually hard bark.
   category: 0
   itemType: Log
-  icon: {fileID: 0}
+  icon: {fileID: 5662397172234875660, guid: 00c72540715a67848bb6d1f853eefc9f, type: 3}
   stackable: 1
   maxStack: 999999
   sellValue: 4

@@ -10,6 +10,7 @@ namespace IdleGame.UI.Inventory
     public sealed class InventorySlotView : MonoBehaviour
     {
         [SerializeField] private TMP_Text glyphText;
+        [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text quantityText;
         [SerializeField] private TMP_Text badgeText;
         [SerializeField] private Button button;
@@ -28,6 +29,15 @@ namespace IdleGame.UI.Inventory
             if (glyphText != null)
             {
                 glyphText.text = MakeGlyph(itemDefinition);
+                glyphText.gameObject.SetActive(itemDefinition == null || itemDefinition.Icon == null);
+            }
+
+            if (iconImage != null)
+            {
+                iconImage.sprite = itemDefinition != null ? itemDefinition.Icon : null;
+                iconImage.preserveAspect = true;
+                iconImage.color = itemDefinition != null && itemDefinition.Icon != null ? Color.white : new Color(0f, 0f, 0f, 0f);
+                iconImage.gameObject.SetActive(itemDefinition != null && itemDefinition.Icon != null);
             }
 
             if (quantityText != null)
@@ -51,6 +61,7 @@ namespace IdleGame.UI.Inventory
         public void AutoBind()
         {
             glyphText ??= HierarchySearch.FindText(transform, "[TEXT] ItemGlyph");
+            iconImage ??= HierarchySearch.FindImage(transform, "[IMAGE] ItemIcon");
             quantityText ??= HierarchySearch.FindText(transform, "[TEXT] Quantity");
             badgeText ??= HierarchySearch.FindText(transform, "[BADGE] ItemStateBadge");
             button ??= GetComponent<Button>() ?? gameObject.AddComponent<Button>();

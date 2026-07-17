@@ -15,6 +15,7 @@ MonoBehaviour:
   treeId: tree_sproutwood
   displayName: Sproutwood Tree
   description: A young and fragile tree commonly found near Greenvale.
+  icon: {fileID: -6420210817239780051, guid: f349e07d52885f846a5c77cfeeb479a2, type: 3}
   requiredLevel: 1
   maximumDurability: 25
   respawnSeconds: 3

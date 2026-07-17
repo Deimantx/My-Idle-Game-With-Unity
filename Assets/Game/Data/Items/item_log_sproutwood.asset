@@ -17,7 +17,7 @@ MonoBehaviour:
   description: A soft young log from a fragile Greenvale tree.
   category: 0
   itemType: Log
-  icon: {fileID: 0}
+  icon: {fileID: -312701248387234153, guid: 238d945e354d9134ebd371c4fb08d1ca, type: 3}
   stackable: 1
   maxStack: 999999
   sellValue: 1

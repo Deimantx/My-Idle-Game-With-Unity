@@ -12,6 +12,7 @@ namespace IdleGame.UI.Woodcutting
         [SerializeField] private TMP_Text requiredLevelText;
         [SerializeField] private TMP_Text stateText;
         [SerializeField] private TMP_Text glyphText;
+        [SerializeField] private Image iconImage;
         [SerializeField] private Button button;
 
         private WoodcuttingTreeDefinition tree;
@@ -41,6 +42,14 @@ namespace IdleGame.UI.Woodcutting
             if (glyphText != null)
             {
                 glyphText.text = "TREE";
+                glyphText.gameObject.SetActive(treeDefinition.Icon == null);
+            }
+
+            if (iconImage != null)
+            {
+                iconImage.sprite = treeDefinition.Icon;
+                iconImage.preserveAspect = true;
+                iconImage.color = treeDefinition.Icon == null ? new Color(0.18f, 0.22f, 0.16f, 1f) : Color.white;
             }
 
             if (button != null)
@@ -57,6 +66,7 @@ namespace IdleGame.UI.Woodcutting
             requiredLevelText ??= HierarchySearch.FindText(transform, "[TEXT] RequiredLevel");
             stateText ??= HierarchySearch.FindText(transform, "[STATE] TreeCardState");
             glyphText ??= HierarchySearch.FindText(transform, "[TEXT] TreeGlyph");
+            iconImage ??= HierarchySearch.FindImage(transform, "[ICON] TreeIcon");
             button ??= GetComponent<Button>();
         }
 
