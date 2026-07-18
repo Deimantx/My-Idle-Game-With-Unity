@@ -1968,7 +1968,7 @@ namespace IdleGame.Editor
 
             var dropdownLayer = CreateOverlayLayer("[OVERLAY] DropdownLayer", mainCanvas.transform);
             var tooltipLayer = CreateOverlayLayer("[OVERLAY] TooltipLayer", mainCanvas.transform);
-            CreatePanel("[TOOLTIP] SharedTooltip", tooltipLayer.transform, RaisedPanel, AccentTeal).SetActive(false);
+            TooltipSceneBuilder.ConfigureGlobalTooltip();
             var notificationLayer = CreateOverlayLayer("[OVERLAY] NotificationLayer", mainCanvas.transform);
             CreateContainer("[CONTAINER] NotificationContainer", notificationLayer.transform, 360f);
             var popupLayer = CreateOverlayLayer("[OVERLAY] PopupLayer", mainCanvas.transform);
@@ -2077,6 +2077,7 @@ namespace IdleGame.Editor
 
             activeActivityBar = CreateActiveActivityBar(contentColumn.transform);
             screenContainer = CreatePanel("[SCREENS] ScreenContainer", contentColumn.transform, DeepBackground, Border);
+            screenContainer.GetComponent<Image>().raycastTarget = false;
             SetStretch((RectTransform)screenContainer.transform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(0f, -88f));
             return mainBody;
         }

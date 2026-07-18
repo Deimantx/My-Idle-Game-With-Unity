@@ -5,8 +5,10 @@ using IdleGame.Inventory;
 using IdleGame.Items;
 using IdleGame.Progression;
 using IdleGame.UI.Shared;
+using IdleGame.UI.Tooltips;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace IdleGame.UI.Combat
@@ -34,6 +36,7 @@ namespace IdleGame.UI.Combat
         [SerializeField] private TMP_Text detailsRequirementsText;
         [SerializeField] private TMP_Text detailsStatsText;
         [SerializeField] private TMP_Text detailsLootText;
+        [SerializeField] private Transform dropdownLayer;
         [SerializeField] private Button startCombatButton;
         [SerializeField] private TMP_Text startCombatButtonText;
         [SerializeField] private TMP_Text notificationText;
@@ -103,6 +106,14 @@ namespace IdleGame.UI.Combat
         [SerializeField] private TMP_Text heavyStrikeText;
         [SerializeField] private TMP_Text heavyStrikeButtonText;
         [SerializeField] private TMP_Text heavyStrikeReasonText;
+        [SerializeField] private RuntimeFillBar heavyStrikeCooldownBar;
+        [SerializeField] private Image heavyStrikeCardImage;
+        [SerializeField] private Image playerPortraitFrameImage;
+        [SerializeField] private Image enemyPortraitFrameImage;
+        [SerializeField] private Image potionSlotImage;
+        [SerializeField] private Transform skillsListContainer;
+        [SerializeField] private Transform floatingCombatTextRoot;
+        [SerializeField] private TMP_Text floatingCombatTextTemplate;
         [SerializeField] private Button potionButton;
         [SerializeField] private TMP_Text potionText;
         [SerializeField] private TMP_Text potionButtonText;
@@ -176,17 +187,30 @@ namespace IdleGame.UI.Combat
         [SerializeField] private Color logDefeatColor = new(1f, 0.38f, 0.38f);
 
         private readonly List<GameObject> generatedSelection = new();
+        private readonly List<GameObject> generatedDetails = new();
+        private readonly List<GameObject> generatedDropdown = new();
         private readonly List<GameObject> generatedLog = new();
         private readonly List<string> renderedLogMessages = new();
+        private readonly List<FloatingCombatText> floatingCombatTexts = new();
+        private readonly Dictionary<Image, Color> baseImageColors = new();
+        private readonly Dictionary<Image, Color> flashColors = new();
+        private readonly Dictionary<Image, float> flashTimers = new();
+        private readonly List<Image> flashScratch = new();
+        private readonly List<Image> flashCompleted = new();
         private int lastDisplayedSessionKills = -1;
         private int lastDisplayedSessionSeconds = -1;
         private int lastDisplayedSessionStatsTick = -1;
+        private int lastHeavyStrikeTextTick = -1;
+        private string lastHeavyStrikeStatus = string.Empty;
         private int clearLogBeforeIndex;
         private int pendingLogEventsWhilePaused;
+        private bool bindingsValidated;
+        private SelectorKind openSelector = SelectorKind.None;
 
         private void Awake()
         {
             AutoBind();
+            ValidateBindings();
         }
 
         private void OnEnable()
@@ -196,6 +220,7 @@ namespace IdleGame.UI.Combat
                 combatSystem.StateChanged += Refresh;
                 combatSystem.Notification += ShowNotification;
                 combatSystem.LogAdded += OnLogAdded;
+                combatSystem.Feedback += OnCombatFeedback;
             }
 
             if (progressionSystem != null)
@@ -219,6 +244,7 @@ namespace IdleGame.UI.Combat
                 combatSystem.StateChanged -= Refresh;
                 combatSystem.Notification -= ShowNotification;
                 combatSystem.LogAdded -= OnLogAdded;
+                combatSystem.Feedback -= OnCombatFeedback;
             }
 
             if (progressionSystem != null)
@@ -230,6 +256,16 @@ namespace IdleGame.UI.Combat
             {
                 inventorySystem.InventoryChanged -= Refresh;
             }
+
+            TooltipManager.HideGlobal();
+            CloseDropdown();
+            UnhookButtons();
+        }
+
+        private void Update()
+        {
+            TickVisualFeedback(Time.unscaledDeltaTime);
+            UpdateHeavyStrikeCooldownBar();
         }
 
         public void ConfigureForEditor(CombatSystem combat, ProfessionProgressionSystem progression)
@@ -242,6 +278,7 @@ namespace IdleGame.UI.Combat
         public void ConfigureInventoryForEditor(InventorySystem inventory)
         {
             inventorySystem = inventory;
+            ConfigureTooltips();
         }
 
         public void AutoBind()
@@ -262,6 +299,7 @@ namespace IdleGame.UI.Combat
             if (detailsRequirementsText == null) detailsRequirementsText = HierarchySearch.FindText(transform, "[TEXT] EnemyRequirements");
             if (detailsStatsText == null) detailsStatsText = HierarchySearch.FindText(transform, "[TEXT] EnemyStats");
             if (detailsLootText == null) detailsLootText = HierarchySearch.FindText(transform, "[TEXT] EnemyLootPreview");
+            if (dropdownLayer == null) dropdownLayer = HierarchySearch.FindDeep(transform.root, "[OVERLAY] DropdownLayer");
             if (startCombatButton == null) startCombatButton = HierarchySearch.FindButton(transform, "[BUTTON] StartCombatButton");
             if (startCombatButtonText == null) startCombatButtonText = HierarchySearch.FindText(startCombatButton != null ? startCombatButton.transform : null, "[TEXT] Label");
             if (notificationText == null) notificationText = HierarchySearch.FindText(transform, "[TEXT] CombatNotification");
@@ -289,6 +327,8 @@ namespace IdleGame.UI.Combat
             if (enemyActionIconPlaceholderText == null) enemyActionIconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] EnemyActionIconLabel");
             if (companionSkillIconImage == null) companionSkillIconImage = HierarchySearch.FindDeep(transform, "[IMAGE] CompanionSkillIcon")?.GetComponent<Image>();
             if (companionSkillIconPlaceholderText == null) companionSkillIconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] CompanionSkillIconLabel");
+            if (playerPortraitFrameImage == null) playerPortraitFrameImage = HierarchySearch.FindDeep(transform, "[FRAME] PlayerPortraitFrame")?.GetComponent<Image>();
+            if (enemyPortraitFrameImage == null) enemyPortraitFrameImage = HierarchySearch.FindDeep(transform, "[FRAME] EnemyPortraitFrame")?.GetComponent<Image>();
             if (playerNameText == null) playerNameText = HierarchySearch.FindText(transform, "[TEXT] PlayerName");
             if (playerStatsText == null) playerStatsText = HierarchySearch.FindText(transform, "[TEXT] PlayerStats");
             if (playerDamageValueText == null) playerDamageValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerDamageValue");
@@ -321,8 +361,12 @@ namespace IdleGame.UI.Combat
             if (heavyStrikeText == null) heavyStrikeText = HierarchySearch.FindText(transform, "[TEXT] HeavyStrikeInfoText");
             if (heavyStrikeButtonText == null) heavyStrikeButtonText = HierarchySearch.FindText(heavyStrikeButton != null ? heavyStrikeButton.transform : null, "[TEXT] Label");
             if (heavyStrikeReasonText == null) heavyStrikeReasonText = HierarchySearch.FindText(transform, "[TEXT] HeavyStrikeReasonText");
+            if (heavyStrikeCooldownBar == null) heavyStrikeCooldownBar = HierarchySearch.FindOrAddFillBar(transform, "[BAR] HeavyStrikeCooldownBar");
+            if (heavyStrikeCardImage == null) heavyStrikeCardImage = HierarchySearch.FindDeep(transform, "[PANEL] HeavyStrikeCard")?.GetComponent<Image>();
+            if (skillsListContainer == null) skillsListContainer = HierarchySearch.FindDeep(transform, "[LIST] PlayerSkillsList");
             if (potionButton == null) potionButton = HierarchySearch.FindButton(transform, "[BUTTON] PotionQuickSlot");
             if (potionButton == null) potionButton = HierarchySearch.FindButton(transform, "[BUTTON] HealingPotionButton");
+            if (potionSlotImage == null) potionSlotImage = potionButton != null ? potionButton.GetComponent<Image>() : null;
             if (potionText == null) potionText = HierarchySearch.FindText(transform, "[TEXT] PotionInfoText");
             if (potionButtonText == null) potionButtonText = HierarchySearch.FindText(potionButton != null ? potionButton.transform : null, "[TEXT] Label");
             if (potionQuantityText == null) potionQuantityText = HierarchySearch.FindText(transform, "[TEXT] PotionQuantityText");
@@ -375,6 +419,489 @@ namespace IdleGame.UI.Combat
             if (combatLogAutoScrollController == null) combatLogAutoScrollController = combatLogScrollRect != null
                 ? combatLogScrollRect.GetComponent<CombatLogAutoScrollController>()
                 : null;
+            if (floatingCombatTextRoot == null) floatingCombatTextRoot = HierarchySearch.FindDeep(transform, "[POOL] FloatingCombatTextRoot");
+            if (floatingCombatTextTemplate == null) floatingCombatTextTemplate = HierarchySearch.FindText(transform, "[TEXT] FloatingCombatTextTemplate");
+
+            ConfigureInteractiveControls();
+            ConfigureTooltips();
+            InitializeFeedbackPools();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                ValidateBindings(false);
+            }
+        }
+#endif
+
+        private void InitializeFeedbackPools()
+        {
+            floatingCombatTexts.RemoveAll(entry => entry.Text == null);
+            if (floatingCombatTextRoot == null || floatingCombatTextTemplate == null)
+            {
+                return;
+            }
+
+            floatingCombatTextTemplate.gameObject.SetActive(false);
+            floatingCombatTextTemplate.raycastTarget = false;
+            foreach (Transform child in floatingCombatTextRoot)
+            {
+                var text = child.GetComponent<TMP_Text>();
+                if (text == null || floatingCombatTexts.Any(entry => entry.Text == text))
+                {
+                    continue;
+                }
+
+                text.raycastTarget = false;
+                floatingCombatTexts.Add(new FloatingCombatText(text));
+            }
+        }
+
+        private void ConfigureInteractiveControls()
+        {
+            ConfigureButton(heavyStrikeButton);
+            ConfigureButton(potionButton);
+            ConfigureButton(startCombatButton);
+            ConfigureButton(clearCombatLogButton);
+            ConfigureButton(pauseScrollButton);
+            ConfigureButton(newLogEventsButton);
+            ConfigureToggle(heavyStrikeAutoToggle);
+            ConfigureToggle(autoRepeatToggle);
+            var controlRaycaster = GetComponent<CombatControlRaycaster>();
+            if (controlRaycaster != null)
+            {
+                controlRaycaster.ConfigureForEditor(heavyStrikeButton, heavyStrikeAutoToggle, autoRepeatToggle);
+            }
+
+            SetGraphicRaycastTarget(FindNamed("[SCREENS] ScreenContainer"), false);
+            SetGraphicRaycastTarget(floatingCombatTextRoot, false, true);
+            DisableBarRaycasts(warriorXpBar);
+            DisableBarRaycasts(playerHealthBar);
+            DisableBarRaycasts(devotionBar);
+            DisableBarRaycasts(playerAttackBar);
+            DisableBarRaycasts(enemyHealthBar);
+            DisableBarRaycasts(enemyAttackBar);
+            DisableBarRaycasts(heavyStrikeCooldownBar);
+            DisableBarRaycasts(companionActionBar);
+        }
+
+        private void ConfigureTooltips()
+        {
+            ConfigureHeavyStrikeTooltip(heavyStrikeButton != null ? heavyStrikeButton.gameObject : null);
+            var heavyStrikeIconFrame = HierarchySearch.FindDeep(transform, "[FRAME] HeavyStrikeIconFrame");
+            ConfigureHeavyStrikeTooltip(heavyStrikeIconFrame != null ? heavyStrikeIconFrame.gameObject : null);
+
+            var potionItem = GetItem(CombatConstants.MinorHealingPotionItemId);
+            if (potionItem != null)
+            {
+                ConfigureItemTooltip(potionButton != null ? potionButton.gameObject : null, CombatConstants.MinorHealingPotionItemId, potionItem, true);
+            }
+            else
+            {
+                ConfigureStaticTooltip(potionButton != null ? potionButton.gameObject : null, "Empty Potion Slot", "Potion", "No potion is assigned.");
+            }
+
+            ConfigureStaticTooltip(elixir1Button != null ? elixir1Button.gameObject : null, "Empty Elixir Slot", "Elixir", "No elixir is assigned.");
+            ConfigureStaticTooltip(elixir2Button != null ? elixir2Button.gameObject : null, "Empty Elixir Slot", "Elixir", "No elixir is assigned.");
+            ConfigureStaticTooltip(elixir3Button != null ? elixir3Button.gameObject : null, "Empty Elixir Slot", "Elixir", "No elixir is assigned.");
+            ConfigureStaticTooltip(elixir4Button != null ? elixir4Button.gameObject : null, "Empty Elixir Slot", "Elixir", "No elixir is assigned.");
+            ConfigureStaticTooltip(foodButton != null ? foodButton.gameObject : null, "Empty Food Slot", "Food", "No food is assigned.");
+        }
+
+        private void ConfigureHeavyStrikeTooltip(GameObject target)
+        {
+            if (target == null || combatSystem == null)
+            {
+                return;
+            }
+
+            EnableTooltipRaycast(target);
+            var provider = target.GetComponent<CombatSkillTooltipProvider>() ?? target.AddComponent<CombatSkillTooltipProvider>();
+            provider.ConfigureForEditor(combatSystem, CombatConstants.HeavyStrikeAbilityId);
+            var trigger = target.GetComponent<TooltipTrigger>() ?? target.AddComponent<TooltipTrigger>();
+            trigger.ConfigureForEditor(provider);
+        }
+
+        private void ConfigureItemTooltip(GameObject target, string itemId, ItemDefinition item, bool includeQuantity)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            EnableTooltipRaycast(target);
+            var provider = target.GetComponent<ItemTooltipProvider>() ?? target.AddComponent<ItemTooltipProvider>();
+            provider.ConfigureForEditor(itemId, item, inventorySystem, null, combatSystem, includeQuantity, false);
+            var trigger = target.GetComponent<TooltipTrigger>() ?? target.AddComponent<TooltipTrigger>();
+            trigger.ConfigureForEditor(provider);
+        }
+
+        private void ConfigureStaticTooltip(GameObject target, string title, string category, string description)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            EnableTooltipRaycast(target);
+            var provider = target.GetComponent<StaticTooltipProvider>() ?? target.AddComponent<StaticTooltipProvider>();
+            provider.ConfigureForEditor(title, category, description);
+            var trigger = target.GetComponent<TooltipTrigger>() ?? target.AddComponent<TooltipTrigger>();
+            trigger.ConfigureForEditor(provider);
+        }
+
+        private static void EnableTooltipRaycast(GameObject target)
+        {
+            var image = target != null ? target.GetComponent<Image>() : null;
+            if (image != null)
+            {
+                image.raycastTarget = true;
+            }
+        }
+
+        private static void ConfigureButton(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = true;
+                if (button.targetGraphic == null)
+                {
+                    button.targetGraphic = image;
+                }
+            }
+        }
+
+        private static void ConfigureToggle(Toggle toggle)
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            var rootImage = toggle.GetComponent<Image>();
+            if (rootImage != null)
+            {
+                rootImage.raycastTarget = true;
+            }
+
+            if (toggle.targetGraphic == null)
+            {
+                var checkbox = HierarchySearch.FindImage(toggle.transform, "[IMAGE] Checkbox");
+                if (checkbox != null)
+                {
+                    toggle.targetGraphic = checkbox;
+                }
+            }
+
+            if (toggle.graphic == null)
+            {
+                var checkmark = HierarchySearch.FindImage(toggle.transform, "[IMAGE] Checkmark");
+                if (checkmark != null)
+                {
+                    toggle.graphic = checkmark;
+                }
+            }
+
+            if (toggle.targetGraphic != null)
+            {
+                toggle.targetGraphic.raycastTarget = true;
+            }
+
+            if (toggle.graphic != null)
+            {
+                toggle.graphic.raycastTarget = false;
+            }
+        }
+
+        private static void DisableBarRaycasts(RuntimeFillBar bar)
+        {
+            if (bar == null)
+            {
+                return;
+            }
+
+            SetGraphicRaycastTarget(bar.transform, false, true);
+        }
+
+        private static void SetGraphicRaycastTarget(Transform root, bool raycastTarget, bool includeChildren = false)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var graphics = includeChildren
+                ? root.GetComponentsInChildren<Graphic>(true)
+                : root.GetComponents<Graphic>();
+            foreach (var graphic in graphics)
+            {
+                if (graphic == null)
+                {
+                    continue;
+                }
+
+                graphic.raycastTarget = raycastTarget;
+            }
+        }
+
+        private Transform FindNamed(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            var current = transform;
+            while (current != null)
+            {
+                if (current.name == objectName)
+                {
+                    return current;
+                }
+
+                current = current.parent;
+            }
+
+            return HierarchySearch.FindDeep(transform.root, objectName);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ValidateBindings(bool runtimeOnlyOnce = true)
+        {
+            if (runtimeOnlyOnce && bindingsValidated)
+            {
+                return;
+            }
+
+            bindingsValidated = true;
+            ValidateReference(combatSystem, nameof(combatSystem));
+            ValidateReference(heavyStrikeButton, nameof(heavyStrikeButton));
+            ValidateReference(heavyStrikeAutoToggle, nameof(heavyStrikeAutoToggle));
+            ValidateReference(autoRepeatToggle, nameof(autoRepeatToggle));
+            ValidateButtonBinding(heavyStrikeButton, nameof(heavyStrikeButton));
+            ValidateToggleBinding(heavyStrikeAutoToggle, nameof(heavyStrikeAutoToggle));
+            ValidateToggleBinding(autoRepeatToggle, nameof(autoRepeatToggle));
+
+            var eventSystems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude);
+            if (eventSystems.Length != 1)
+            {
+                Debug.LogError($"ActiveCombatUI: Expected exactly one active EventSystem, found {eventSystems.Length}.", this);
+            }
+
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.GetComponent<GraphicRaycaster>() == null)
+            {
+                Debug.LogError("ActiveCombatUI: Missing GraphicRaycaster on the parent Canvas.", this);
+            }
+
+            WarnIfRaycastBlocker("[SCREENS] ScreenContainer");
+            WarnIfRaycastBlocker("[POOL] FloatingCombatTextRoot");
+        }
+
+        private void ValidateReference(Object reference, string fieldName)
+        {
+            if (reference == null)
+            {
+                Debug.LogError($"ActiveCombatUI: Missing {fieldName} reference on {GetHierarchyPath(transform)}.", this);
+            }
+        }
+
+        private void ValidateButtonBinding(Button button, string fieldName)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            if (button.targetGraphic == null)
+            {
+                Debug.LogError($"ActiveCombatUI: {fieldName} has no targetGraphic at {GetHierarchyPath(button.transform)}.", button);
+            }
+        }
+
+        private void ValidateToggleBinding(Toggle toggle, string fieldName)
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            if (toggle.targetGraphic == null)
+            {
+                Debug.LogError($"ActiveCombatUI: {fieldName} has no checkbox targetGraphic at {GetHierarchyPath(toggle.transform)}.", toggle);
+            }
+
+            if (toggle.graphic == null)
+            {
+                Debug.LogError($"ActiveCombatUI: {fieldName} has no checkmark graphic at {GetHierarchyPath(toggle.transform)}.", toggle);
+            }
+        }
+
+        private void WarnIfRaycastBlocker(string objectName)
+        {
+            var target = FindNamed(objectName);
+            if (target == null)
+            {
+                return;
+            }
+
+            foreach (var graphic in target.GetComponents<Graphic>())
+            {
+                if (graphic != null && graphic.raycastTarget)
+                {
+                    Debug.LogWarning($"ActiveCombatUI: Decorative object '{GetHierarchyPath(target)}' has Raycast Target enabled.", graphic);
+                }
+            }
+        }
+
+        private static string GetHierarchyPath(Transform target)
+        {
+            if (target == null)
+            {
+                return "<missing>";
+            }
+
+            var names = new Stack<string>();
+            var current = target;
+            while (current != null)
+            {
+                names.Push(current.name);
+                current = current.parent;
+            }
+
+            return string.Join("/", names);
+        }
+
+        private void TickVisualFeedback(float delta)
+        {
+            if (delta <= 0f)
+            {
+                return;
+            }
+
+            UpdateImageFlashes(delta);
+            for (var i = 0; i < floatingCombatTexts.Count; i++)
+            {
+                floatingCombatTexts[i].Tick(delta);
+            }
+        }
+
+        private void UpdateImageFlashes(float delta)
+        {
+            if (flashTimers.Count == 0)
+            {
+                return;
+            }
+
+            flashScratch.Clear();
+            flashScratch.AddRange(flashTimers.Keys);
+            flashCompleted.Clear();
+            foreach (var image in flashScratch)
+            {
+                if (image == null)
+                {
+                    flashCompleted.Add(image);
+                    continue;
+                }
+
+                var remaining = Mathf.Max(0f, flashTimers[image] - delta);
+                if (!baseImageColors.TryGetValue(image, out var baseColor))
+                {
+                    baseColor = image.color;
+                }
+
+                var flashColor = flashColors.TryGetValue(image, out var storedFlash) ? storedFlash : Color.white;
+                image.color = Color.Lerp(baseColor, flashColor, remaining / 0.22f);
+                if (remaining <= 0f)
+                {
+                    image.color = baseColor;
+                    flashCompleted.Add(image);
+                }
+                else
+                {
+                    flashTimers[image] = remaining;
+                }
+            }
+
+            foreach (var image in flashCompleted)
+            {
+                flashTimers.Remove(image);
+                flashColors.Remove(image);
+            }
+        }
+
+        private void Flash(Image image, Color flashColor)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            if (!baseImageColors.ContainsKey(image))
+            {
+                baseImageColors[image] = image.color;
+            }
+
+            image.color = flashColor;
+            flashColors[image] = flashColor;
+            flashTimers[image] = 0.22f;
+        }
+
+        private void SpawnFloatingText(string value, Transform target, Color color, bool critical = false)
+        {
+            if (floatingCombatTextRoot == null || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            var entry = GetFloatingText();
+            if (entry == null)
+            {
+                return;
+            }
+
+            var rootRect = floatingCombatTextRoot as RectTransform;
+            var targetRect = target as RectTransform;
+            var localPosition = Vector2.zero;
+            if (rootRect != null && targetRect != null)
+            {
+                var world = targetRect.TransformPoint(targetRect.rect.center);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(rootRect, RectTransformUtility.WorldToScreenPoint(null, world), null, out localPosition);
+            }
+
+            entry.Play(value, localPosition, color, critical);
+        }
+
+        private FloatingCombatText GetFloatingText()
+        {
+            InitializeFeedbackPools();
+            var entry = floatingCombatTexts.FirstOrDefault(item => !item.IsActive);
+            if (entry != null)
+            {
+                return entry;
+            }
+
+            if (floatingCombatTextRoot == null || floatingCombatTextTemplate == null)
+            {
+                return null;
+            }
+
+            var text = Instantiate(floatingCombatTextTemplate, floatingCombatTextRoot);
+            text.name = "[TEXT] FloatingCombatText";
+            text.raycastTarget = false;
+            entry = new FloatingCombatText(text);
+            floatingCombatTexts.Add(entry);
+            return entry;
         }
 
         private void HookButtons()
@@ -428,6 +955,49 @@ namespace IdleGame.UI.Combat
             }
         }
 
+        private void UnhookButtons()
+        {
+            if (startCombatButton != null)
+            {
+                startCombatButton.onClick.RemoveListener(StartCombat);
+            }
+
+            if (heavyStrikeButton != null)
+            {
+                heavyStrikeButton.onClick.RemoveListener(QueueHeavyStrike);
+            }
+
+            if (potionButton != null)
+            {
+                potionButton.onClick.RemoveListener(UseMinorPotion);
+            }
+
+            if (clearCombatLogButton != null)
+            {
+                clearCombatLogButton.onClick.RemoveListener(ClearVisibleCombatLog);
+            }
+
+            if (pauseScrollButton != null)
+            {
+                pauseScrollButton.onClick.RemoveListener(ToggleLogAutoScroll);
+            }
+
+            if (newLogEventsButton != null)
+            {
+                newLogEventsButton.onClick.RemoveListener(ResumeLogAutoScroll);
+            }
+
+            if (autoRepeatToggle != null)
+            {
+                autoRepeatToggle.onValueChanged.RemoveListener(SetAutoRepeat);
+            }
+
+            if (heavyStrikeAutoToggle != null)
+            {
+                heavyStrikeAutoToggle.onValueChanged.RemoveListener(SetHeavyStrikeAuto);
+            }
+        }
+
         private void Refresh()
         {
             if (combatSystem == null)
@@ -477,25 +1047,49 @@ namespace IdleGame.UI.Combat
             ClearGenerated(generatedSelection);
 
             var catalog = combatSystem.Catalog;
-            AddSelectionButton(regionContainer, regionTemplate, catalog.RegionDisplayName, combatSystem.SelectedRegionId == catalog.RegionId, () => combatSystem.SelectRegion(catalog.RegionId));
-            if (combatSystem.SelectedRegionId == catalog.RegionId)
-            {
-                AddSelectionButton(activityTypeContainer, activityTypeTemplate, catalog.ActivityTypeDisplayName, combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId, () => combatSystem.SelectActivityType(catalog.ActivityTypeId));
-            }
+            AddSelectorRow(
+                regionContainer,
+                regionTemplate,
+                SelectorKind.Region,
+                "REG",
+                "Region",
+                combatSystem.SelectedRegionId == catalog.RegionId ? catalog.RegionDisplayName : "Select a Region",
+                combatSystem.SelectedRegionId == catalog.RegionId,
+                true,
+                "Available combat regions.");
 
-            if (combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId)
-            {
-                AddSelectionButton(locationContainer, locationTemplate, catalog.LocationDisplayName, combatSystem.SelectedLocationId == catalog.LocationId, () => combatSystem.SelectLocation(catalog.LocationId));
-            }
+            AddSelectorRow(
+                activityTypeContainer,
+                activityTypeTemplate,
+                SelectorKind.ActivityType,
+                "TYPE",
+                "Type",
+                combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId ? catalog.ActivityTypeDisplayName : "Select a Type",
+                combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId,
+                combatSystem.SelectedRegionId == catalog.RegionId,
+                "Available encounter categories for this region.");
 
-            if (combatSystem.SelectedLocationId == catalog.LocationId)
+            AddSelectorRow(
+                locationContainer,
+                locationTemplate,
+                SelectorKind.Location,
+                "LOC",
+                "Location",
+                combatSystem.SelectedLocationId == catalog.LocationId ? catalog.LocationDisplayName : "Select a Location",
+                combatSystem.SelectedLocationId == catalog.LocationId,
+                combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId,
+                "Available combat locations for this type.");
+
+            if (combatSystem.SelectedLocationId == catalog.LocationId && catalog.Enemies.Any(enemy => enemy != null))
             {
                 foreach (var enemy in catalog.Enemies.Where(enemy => enemy != null))
                 {
-                    var unlocked = combatSystem.IsEnemyUnlocked(enemy);
-                    var label = unlocked ? enemy.DisplayName : $"{enemy.DisplayName} - Requires Warrior {enemy.RequiredWarriorLevel}";
-                    AddSelectionButton(enemyContainer, enemyTemplate, label, combatSystem.SelectedEnemy == enemy, () => combatSystem.SelectEnemy(enemy.EnemyId), unlocked);
+                    AddEnemyEntry(enemyContainer, enemyTemplate, enemy, combatSystem.SelectedEnemy == enemy);
                 }
+            }
+            else
+            {
+                AddEmptySelectionState(enemyContainer, "No enemies available in this location.");
             }
 
             if (breadcrumbText != null)
@@ -506,45 +1100,73 @@ namespace IdleGame.UI.Combat
                 if (combatSystem.SelectedLocationId == catalog.LocationId) parts.Add(catalog.LocationDisplayName);
                 if (combatSystem.SelectedEnemy != null) parts.Add(combatSystem.SelectedEnemy.DisplayName);
                 breadcrumbText.text = parts.Count > 0 ? string.Join(" > ", parts) : "Select a Region";
+                breadcrumbText.textWrappingMode = TextWrappingModes.NoWrap;
+                breadcrumbText.overflowMode = TextOverflowModes.Ellipsis;
+            }
+
+            var enemyHeader = HierarchySearch.FindText(transform, "[HEADER] ENEMY");
+            if (enemyHeader != null)
+            {
+                enemyHeader.text = combatSystem.SelectedLocationId == catalog.LocationId
+                    ? $"Enemies in {catalog.LocationDisplayName}"
+                    : "Enemies";
+                enemyHeader.color = new Color(0.86f, 0.69f, 0.35f, 1f);
+                enemyHeader.fontSize = 15f;
+                enemyHeader.textWrappingMode = TextWrappingModes.NoWrap;
+                enemyHeader.overflowMode = TextOverflowModes.Ellipsis;
             }
         }
 
         private void RefreshDetails()
         {
+            ClearGenerated(generatedDetails);
+
             var enemy = combatSystem.SelectedEnemy;
             if (enemy == null)
             {
                 if (detailsNameText != null) detailsNameText.text = "Select an enemy";
-                if (detailsDescriptionText != null) detailsDescriptionText.text = "Choose Greenvale, Areas, Greenvale Forest, then an enemy.";
-                if (detailsRequirementsText != null) detailsRequirementsText.text = string.Empty;
-                if (detailsStatsText != null) detailsStatsText.text = string.Empty;
-                if (detailsLootText != null) detailsLootText.text = string.Empty;
+                if (detailsDescriptionText != null) detailsDescriptionText.text = "No enemies available in this location.";
+                if (detailsRequirementsText != null) detailsRequirementsText.text = "Select an enemy to view requirements.";
+                SetActive(detailsStatsText, false);
+                SetActive(detailsLootText, false);
+                if (startCombatButton != null) startCombatButton.interactable = false;
                 if (startCombatButtonText != null) startCombatButtonText.text = "Start Combat";
+                if (notificationText != null) notificationText.text = "Select an enemy to begin combat.";
                 return;
             }
 
             if (detailsNameText != null) detailsNameText.text = enemy.DisplayName;
-            if (detailsDescriptionText != null) detailsDescriptionText.text = enemy.Description;
+            if (detailsDescriptionText != null)
+            {
+                detailsDescriptionText.text = enemy.Description;
+                detailsDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(enemy.Description));
+            }
+
+            SetActive(detailsStatsText, false);
+            SetActive(detailsLootText, false);
+
+            var unlocked = combatSystem.IsEnemyUnlocked(enemy);
             if (detailsRequirementsText != null)
             {
-                detailsRequirementsText.text = combatSystem.IsEnemyUnlocked(enemy)
-                    ? "Requirement met"
-                    : $"Requires Warrior Level {enemy.RequiredWarriorLevel}";
+                detailsRequirementsText.text = unlocked
+                    ? "AVAILABLE\nYou meet all requirements."
+                    : $"LOCKED\n{BuildRequirementText(enemy)}";
             }
 
-            if (detailsStatsText != null)
-            {
-                detailsStatsText.text = $"Health {enemy.MaximumHealth}\nDamage {enemy.MinDamage}-{enemy.MaxDamage}\nAttack {enemy.AttackInterval:0.0}s\nAccuracy {enemy.Accuracy}\nDefense {enemy.Defense}\nCrit {enemy.CriticalChance:P0}";
-            }
+            ConfigureEnemyPortraitTooltip();
+            AddStatsSection(enemy);
+            AddAbilitiesSection();
+            AddRewardsSection(enemy);
 
-            if (detailsLootText != null)
-            {
-                detailsLootText.text = BuildLootPreview(enemy);
-            }
-
+            if (startCombatButton != null) startCombatButton.interactable = unlocked;
             if (startCombatButtonText != null)
             {
                 startCombatButtonText.text = combatSystem.IsStartConfirmationPending ? "Confirm Start" : "Start Combat";
+            }
+
+            if (notificationText != null)
+            {
+                notificationText.text = unlocked ? string.Empty : BuildRequirementText(enemy);
             }
         }
 
@@ -667,7 +1289,13 @@ namespace IdleGame.UI.Combat
             var heavyStatus = GetHeavyStrikeStatus();
             if (heavyStrikeText != null)
             {
-                heavyStrikeText.text = $"Heavy Strike\n{heavyStatus}";
+                var tick = Mathf.FloorToInt(Time.unscaledTime * 10f);
+                if (tick != lastHeavyStrikeTextTick || heavyStatus != lastHeavyStrikeStatus)
+                {
+                    lastHeavyStrikeTextTick = tick;
+                    lastHeavyStrikeStatus = heavyStatus;
+                    heavyStrikeText.text = $"Heavy Strike\n{heavyStatus}";
+                }
             }
 
             if (heavyStrikeButton != null)
@@ -686,13 +1314,15 @@ namespace IdleGame.UI.Combat
                 heavyStrikeReasonText.gameObject.SetActive(false);
             }
 
+            UpdateHeavyStrikeCooldownBar();
+
             var potionItem = GetItem(CombatConstants.MinorHealingPotionItemId);
             var potionSprite = potionItem != null && potionItem.Icon != null ? potionItem.Icon : potionIconSprite;
             SetIcon(potionIconImage, potionSprite, potionIconPlaceholderText, "POT");
             RefreshDisabledConsumableSlots();
             if (potionText != null)
             {
-                potionText.text = potionItem != null ? potionItem.DisplayName : "Minor Potion";
+                potionText.text = "Potion";
             }
 
             if (potionQuantityText != null)
@@ -787,6 +1417,22 @@ namespace IdleGame.UI.Combat
             }
 
             return combatSystem.CanQueueHeavyStrike ? "Ready" : "Combat inactive";
+        }
+
+        private void UpdateHeavyStrikeCooldownBar()
+        {
+            if (heavyStrikeCooldownBar == null || combatSystem == null)
+            {
+                return;
+            }
+
+            var duration = Mathf.Max(0.01f, combatSystem.HeavyStrikeCooldownDurationSeconds);
+            var progress = combatSystem.HeavyStrikeCooldownRemaining > 0f
+                ? 1f - Mathf.Clamp01(combatSystem.HeavyStrikeCooldownRemaining / duration)
+                : combatSystem.CanQueueHeavyStrike || combatSystem.IsHeavyStrikeQueued || combatSystem.IsPerformingHeavyStrike
+                    ? 1f
+                    : 0f;
+            heavyStrikeCooldownBar.SetValue(progress, string.Empty);
         }
 
         private void SetActionIcon(Image image, TMP_Text placeholder, string actionLabel)
@@ -927,32 +1573,32 @@ namespace IdleGame.UI.Combat
             lastDisplayedSessionStatsTick = tick;
             if (sessionDamageDealtText != null)
             {
-                sessionDamageDealtText.text = $"Damage {combatSystem.SessionDamageDealt:N0}";
+                sessionDamageDealtText.text = combatSystem.SessionDamageDealt.ToString("N0");
             }
 
             if (sessionCompanionDamageText != null)
             {
-                sessionCompanionDamageText.text = "Companion —";
+                sessionCompanionDamageText.text = "—";
             }
 
             if (sessionDamageTakenText != null)
             {
-                sessionDamageTakenText.text = $"Taken {combatSystem.SessionDamageTaken:N0}";
+                sessionDamageTakenText.text = combatSystem.SessionDamageTaken.ToString("N0");
             }
 
             if (sessionHealingText != null)
             {
-                sessionHealingText.text = $"Healing {combatSystem.SessionHealingReceived:N0}";
+                sessionHealingText.text = combatSystem.SessionHealingReceived.ToString("N0");
             }
 
             if (sessionDefeatedText != null)
             {
-                sessionDefeatedText.text = $"Defeated {combatSystem.SessionKillCount:N0}";
+                sessionDefeatedText.text = combatSystem.SessionKillCount.ToString("N0");
             }
 
             if (sessionDpsText != null)
             {
-                sessionDpsText.text = $"DPS {combatSystem.SessionDamagePerSecond:0.0}";
+                sessionDpsText.text = combatSystem.SessionDamagePerSecond.ToString("0.0");
             }
 
             if (sessionStatsText != null)
@@ -1167,6 +1813,323 @@ namespace IdleGame.UI.Combat
             return height;
         }
 
+        private void AddSelectorRow(
+            Transform container,
+            Button template,
+            SelectorKind kind,
+            string iconLabel,
+            string label,
+            string value,
+            bool selected,
+            bool interactable,
+            string tooltip)
+        {
+            if (container == null || template == null)
+            {
+                return;
+            }
+
+            var button = Instantiate(template, container);
+            button.name = $"[SELECTOR] {label}Selector";
+            button.gameObject.SetActive(true);
+            button.interactable = interactable;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => ToggleDropdown(kind, button.transform as RectTransform));
+
+            ApplySelectorVisual(button, kind, selected);
+
+            ConfigureHorizontal(button.gameObject, 8, 10, 10, 6, 6, TextAnchor.MiddleLeft);
+            ConfigureLayout(button.gameObject, 46f, 46f, 0f);
+
+            var iconText = EnsureText(button.transform, "[TEXT] SelectorIcon", iconLabel, 12f, new Color(0.86f, 0.69f, 0.35f, 1f), TextAlignmentOptions.Center);
+            ConfigureLayout(iconText.gameObject, 34f, 34f, 0f, 34f);
+
+            var textGroup = EnsureChild(button.transform, "[GROUP] SelectorText");
+            ConfigureVertical(textGroup, 0, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            ConfigureLayout(textGroup, 0f, 0f, 1f);
+
+            var labelText = EnsureText(textGroup.transform, "[TEXT] SelectorLabel", $"{label}:", 11f, new Color(0.58f, 0.65f, 0.72f, 1f), TextAlignmentOptions.Left);
+            labelText.textWrappingMode = TextWrappingModes.NoWrap;
+            var valueText = EnsureText(textGroup.transform, "[TEXT] SelectorValue", value, 15f, new Color(0.91f, 0.85f, 0.74f, 1f), TextAlignmentOptions.Left);
+            valueText.textWrappingMode = TextWrappingModes.NoWrap;
+            valueText.overflowMode = TextOverflowModes.Ellipsis;
+
+            var arrowText = EnsureText(button.transform, "[TEXT] DropdownArrow", "v", 16f, new Color(0.86f, 0.69f, 0.35f, 1f), TextAlignmentOptions.Center);
+            ConfigureLayout(arrowText.gameObject, 28f, 28f, 0f, 28f);
+
+            ConfigureStaticTooltip(iconText.gameObject, label, "Combat Selector", tooltip);
+            generatedSelection.Add(button.gameObject);
+        }
+
+        private void ToggleDropdown(SelectorKind kind, RectTransform source)
+        {
+            if (openSelector == kind)
+            {
+                CloseDropdown();
+                return;
+            }
+
+            OpenDropdown(kind, source);
+        }
+
+        private void OpenDropdown(SelectorKind kind, RectTransform source)
+        {
+            CloseDropdown();
+            if (dropdownLayer == null || source == null || combatSystem?.Catalog == null)
+            {
+                return;
+            }
+
+            openSelector = kind;
+
+            var blocker = new GameObject("[BLOCKER] CombatSelectorDropdownBlocker", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+            blocker.transform.SetParent(dropdownLayer, false);
+            var blockerRect = blocker.transform as RectTransform;
+            blockerRect.anchorMin = Vector2.zero;
+            blockerRect.anchorMax = Vector2.one;
+            blockerRect.offsetMin = Vector2.zero;
+            blockerRect.offsetMax = Vector2.zero;
+            var blockerImage = blocker.GetComponent<Image>();
+            blockerImage.color = new Color(0f, 0f, 0f, 0f);
+            blockerImage.raycastTarget = true;
+            var blockerButton = blocker.GetComponent<Button>();
+            blockerButton.targetGraphic = blockerImage;
+            blockerButton.onClick.AddListener(CloseDropdown);
+            generatedDropdown.Add(blocker);
+
+            var options = GetSelectorOptions(kind).ToList();
+            var panel = new GameObject("[DROPDOWN] CombatSelectorDropdown", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Outline), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            panel.transform.SetParent(dropdownLayer, false);
+            panel.transform.SetAsLastSibling();
+            ConfigureVertical(panel, 4, 6, 6, 6, 6, TextAnchor.UpperLeft);
+            ConfigureLayout(panel, 46f * Mathf.Max(1, options.Count) + 12f, 46f * Mathf.Max(1, options.Count) + 12f, 0f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0.05f, 0.07f, 0.10f, 0.98f);
+            panelImage.raycastTarget = true;
+            var panelOutline = panel.GetComponent<Outline>();
+            panelOutline.effectColor = new Color(0.34f, 0.56f, 0.82f, 1f);
+            panelOutline.effectDistance = new Vector2(1f, -1f);
+
+            PositionDropdownPanel(panel.transform as RectTransform, source, options.Count);
+            generatedDropdown.Add(panel);
+
+            if (options.Count == 0)
+            {
+                AddDropdownLabel(panel.transform, "No valid options");
+                return;
+            }
+
+            foreach (var option in options)
+            {
+                AddDropdownOption(panel.transform, option);
+            }
+        }
+
+        private IEnumerable<SelectorOption> GetSelectorOptions(SelectorKind kind)
+        {
+            var catalog = combatSystem.Catalog;
+            switch (kind)
+            {
+                case SelectorKind.Region:
+                    yield return new SelectorOption(catalog.RegionDisplayName, catalog.RegionId, combatSystem.SelectedRegionId == catalog.RegionId, () => combatSystem.SelectRegion(catalog.RegionId));
+                    break;
+                case SelectorKind.ActivityType:
+                    if (combatSystem.SelectedRegionId == catalog.RegionId)
+                    {
+                        yield return new SelectorOption(catalog.ActivityTypeDisplayName, catalog.ActivityTypeId, combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId, () => combatSystem.SelectActivityType(catalog.ActivityTypeId));
+                    }
+
+                    break;
+                case SelectorKind.Location:
+                    if (combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId)
+                    {
+                        yield return new SelectorOption(catalog.LocationDisplayName, catalog.LocationId, combatSystem.SelectedLocationId == catalog.LocationId, () => combatSystem.SelectLocation(catalog.LocationId));
+                    }
+
+                    break;
+            }
+        }
+
+        private void AddDropdownOption(Transform parent, SelectorOption option)
+        {
+            var row = new GameObject("[OPTION] CombatSelectorOption", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(LayoutElement));
+            row.transform.SetParent(parent, false);
+            ConfigureLayout(row, 40f, 40f, 0f);
+            var image = row.GetComponent<Image>();
+            image.color = option.Selected ? new Color(0.12f, 0.18f, 0.25f, 1f) : new Color(0.08f, 0.11f, 0.15f, 1f);
+            image.raycastTarget = true;
+            var button = row.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() =>
+            {
+                CloseDropdown();
+                option.Select();
+            });
+
+            var text = EnsureText(row.transform, "[TEXT] Label", option.Selected ? $"> {option.DisplayName}" : option.DisplayName, 14f, new Color(0.91f, 0.85f, 0.74f, 1f), TextAlignmentOptions.Left);
+            Stretch(text.transform as RectTransform, 10f, 0f, -10f, 0f);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+        }
+
+        private void AddDropdownLabel(Transform parent, string value)
+        {
+            var text = EnsureText(parent, "[TEXT] EmptyDropdown", value, 13f, new Color(0.58f, 0.65f, 0.72f, 1f), TextAlignmentOptions.Center);
+            ConfigureLayout(text.gameObject, 40f, 40f, 0f);
+        }
+
+        private void PositionDropdownPanel(RectTransform panel, RectTransform source, int optionCount)
+        {
+            if (panel == null || source == null)
+            {
+                return;
+            }
+
+            var parentRect = dropdownLayer as RectTransform;
+            var corners = new Vector3[4];
+            source.GetWorldCorners(corners);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, corners[0], null, out var bottomLeft);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, corners[2], null, out var topRight);
+
+            panel.anchorMin = new Vector2(0.5f, 0.5f);
+            panel.anchorMax = new Vector2(0.5f, 0.5f);
+            panel.pivot = new Vector2(0f, 1f);
+            panel.sizeDelta = new Vector2(Mathf.Max(260f, topRight.x - bottomLeft.x), 46f * Mathf.Max(1, optionCount) + 12f);
+            panel.anchoredPosition = new Vector2(bottomLeft.x, bottomLeft.y - 4f);
+        }
+
+        private void CloseDropdown()
+        {
+            openSelector = SelectorKind.None;
+            TooltipManager.HideGlobal();
+            ClearGenerated(generatedDropdown);
+            UpdateGeneratedSelectorVisuals();
+        }
+
+        private void UpdateGeneratedSelectorVisuals()
+        {
+            if (combatSystem?.Catalog == null)
+            {
+                return;
+            }
+
+            var catalog = combatSystem.Catalog;
+            foreach (var item in generatedSelection.Where(item => item != null))
+            {
+                var button = item.GetComponent<Button>();
+                if (button == null)
+                {
+                    continue;
+                }
+
+                if (item.name.Contains("RegionSelector"))
+                {
+                    ApplySelectorVisual(button, SelectorKind.Region, combatSystem.SelectedRegionId == catalog.RegionId);
+                }
+                else if (item.name.Contains("TypeSelector"))
+                {
+                    ApplySelectorVisual(button, SelectorKind.ActivityType, combatSystem.SelectedActivityTypeId == catalog.ActivityTypeId);
+                }
+                else if (item.name.Contains("LocationSelector"))
+                {
+                    ApplySelectorVisual(button, SelectorKind.Location, combatSystem.SelectedLocationId == catalog.LocationId);
+                }
+            }
+        }
+
+        private void ApplySelectorVisual(Button button, SelectorKind kind, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = selected || openSelector == kind ? new Color(0.12f, 0.18f, 0.25f, 1f) : new Color(0.08f, 0.11f, 0.15f, 1f);
+                image.raycastTarget = true;
+            }
+
+            var outline = button.GetComponent<Outline>();
+            if (outline != null)
+            {
+                outline.effectColor = openSelector == kind
+                    ? new Color(0.34f, 0.56f, 0.82f, 1f)
+                    : selected ? new Color(0.27f, 0.42f, 0.58f, 1f) : new Color(0.20f, 0.27f, 0.33f, 1f);
+            }
+        }
+
+        private void AddEnemyEntry(Transform container, Button template, CombatEnemyDefinition enemy, bool selected)
+        {
+            if (container == null || template == null || enemy == null)
+            {
+                return;
+            }
+
+            var unlocked = combatSystem.IsEnemyUnlocked(enemy);
+            var button = Instantiate(template, container);
+            button.name = "[CARD] EnemyEntry";
+            button.gameObject.SetActive(true);
+            button.interactable = true;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => combatSystem.SelectEnemy(enemy.EnemyId));
+            ConfigureHorizontal(button.gameObject, 10, 10, 10, 6, 6, TextAnchor.MiddleLeft);
+            ConfigureLayout(button.gameObject, 66f, 66f, 0f);
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = selected ? new Color(0.12f, 0.18f, 0.25f, 1f) : unlocked ? new Color(0.08f, 0.11f, 0.15f, 1f) : new Color(0.08f, 0.08f, 0.09f, 0.88f);
+                image.raycastTarget = true;
+            }
+
+            var outline = button.GetComponent<Outline>();
+            if (outline != null)
+            {
+                outline.effectColor = selected ? new Color(0.34f, 0.56f, 0.82f, 1f) : new Color(0.20f, 0.27f, 0.33f, 1f);
+            }
+
+            var portrait = EnsureChild(button.transform, "[FRAME] EnemyEntryPortrait");
+            ConfigureLayout(portrait, 46f, 46f, 0f, 46f);
+            var portraitImage = portrait.GetComponent<Image>() ?? portrait.AddComponent<Image>();
+            SetIcon(portraitImage, null, EnsureText(portrait.transform, "[TEXT] EnemyEntryPortraitPlaceholder", Abbreviate(enemy.DisplayName), 10f, new Color(0.86f, 0.69f, 0.35f, 1f), TextAlignmentOptions.Center), Abbreviate(enemy.DisplayName));
+            ConfigureStaticTooltip(portrait, enemy.DisplayName, $"Level {enemy.RequiredWarriorLevel} Enemy", enemy.Description);
+
+            var textGroup = EnsureChild(button.transform, "[GROUP] EnemyEntryText");
+            ConfigureVertical(textGroup, 1, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            ConfigureLayout(textGroup, 0f, 0f, 1f);
+            var nameText = EnsureText(textGroup.transform, "[TEXT] EnemyEntryName", enemy.DisplayName, 15f, selected ? new Color(1f, 0.88f, 0.48f, 1f) : new Color(0.91f, 0.85f, 0.74f, 1f), TextAlignmentOptions.Left);
+            nameText.textWrappingMode = TextWrappingModes.NoWrap;
+            nameText.overflowMode = TextOverflowModes.Ellipsis;
+            var stateText = EnsureText(textGroup.transform, "[TEXT] EnemyEntryState", unlocked ? "Available" : BuildRequirementText(enemy), 12f, unlocked ? new Color(0.55f, 0.90f, 0.68f, 1f) : new Color(1f, 0.52f, 0.45f, 1f), TextAlignmentOptions.Left);
+            stateText.textWrappingMode = TextWrappingModes.NoWrap;
+            stateText.overflowMode = TextOverflowModes.Ellipsis;
+
+            var levelText = EnsureText(button.transform, "[TEXT] EnemyEntryLevel", $"Lv. {enemy.RequiredWarriorLevel}", 13f, new Color(0.68f, 0.78f, 0.86f, 1f), TextAlignmentOptions.Right);
+            ConfigureLayout(levelText.gameObject, 64f, 24f, 0f, 64f);
+            generatedSelection.Add(button.gameObject);
+        }
+
+        private void AddEmptySelectionState(Transform container, string message)
+        {
+            if (container == null)
+            {
+                return;
+            }
+
+            var item = new GameObject("[STATE] EmptyEnemyList", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI), typeof(LayoutElement));
+            item.transform.SetParent(container, false);
+            ConfigureLayout(item, 44f, 44f, 0f);
+            var text = item.GetComponent<TMP_Text>();
+            text.text = message;
+            text.fontSize = 13f;
+            text.color = new Color(0.58f, 0.65f, 0.72f, 1f);
+            text.alignment = TextAlignmentOptions.Center;
+            text.raycastTarget = false;
+            generatedSelection.Add(item);
+        }
+
         private void AddSelectionButton(Transform container, Button template, string label, bool selected, UnityEngine.Events.UnityAction action, bool interactable = true)
         {
             if (container == null || template == null)
@@ -1187,6 +2150,289 @@ namespace IdleGame.UI.Combat
             }
 
             generatedSelection.Add(button.gameObject);
+        }
+
+        private void ConfigureEnemyPortraitTooltip()
+        {
+            var enemy = combatSystem.SelectedEnemy;
+            if (enemy == null)
+            {
+                return;
+            }
+
+            var target = enemyPortraitFrameImage != null ? enemyPortraitFrameImage.gameObject : enemyPortraitImage != null ? enemyPortraitImage.gameObject : null;
+            ConfigureStaticTooltip(target, enemy.DisplayName, $"Level {enemy.RequiredWarriorLevel} Enemy", enemy.Description);
+        }
+
+        private void AddStatsSection(CombatEnemyDefinition enemy)
+        {
+            var section = AddDetailsSection("[SECTION] CombatStatistics", "Combat Statistics");
+            if (section == null)
+            {
+                return;
+            }
+
+            AddStatRow(section.transform, "Health", enemy.MaximumHealth.ToString());
+            AddStatRow(section.transform, "Damage", $"{enemy.MinDamage}-{enemy.MaxDamage}");
+            AddStatRow(section.transform, "Attack Speed", $"{enemy.AttackInterval:0.0}s");
+            AddStatRow(section.transform, "Accuracy", enemy.Accuracy.ToString());
+            AddStatRow(section.transform, "Defence", enemy.Defense.ToString());
+            AddStatRow(section.transform, "Critical Chance", enemy.CriticalChance.ToString("P0"));
+        }
+
+        private void AddAbilitiesSection()
+        {
+            var section = AddDetailsSection("[SECTION] SpecialAbilities", "Special Abilities");
+            if (section == null)
+            {
+                return;
+            }
+
+            var text = EnsureText(section.transform, "[TEXT] AbilityNone", "Special Abilities: None", 13f, new Color(0.58f, 0.65f, 0.72f, 1f), TextAlignmentOptions.Left);
+            ConfigureLayout(text.gameObject, 24f, 24f, 0f);
+            text.raycastTarget = false;
+        }
+
+        private void AddRewardsSection(CombatEnemyDefinition enemy)
+        {
+            var section = AddDetailsSection("[SECTION] RewardPreview", "Possible Rewards");
+            if (section == null)
+            {
+                return;
+            }
+
+            var strip = EnsureChild(section.transform, "[STRIP] RewardIcons");
+            ConfigureHorizontal(strip, 8, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            ConfigureLayout(strip, 70f, 70f, 0f);
+
+            if (enemy.MaxGold > 0)
+            {
+                AddRewardCard(strip.transform, "Gold", "Gold", $"{enemy.MinGold}-{enemy.MaxGold}", "Guaranteed", null, "Currency", "Gold awarded when this enemy is defeated.");
+            }
+
+            foreach (var loot in enemy.Loot.Where(loot => loot != null && loot.IsValid))
+            {
+                var item = GetItem(loot.itemId);
+                AddRewardCard(
+                    strip.transform,
+                    item != null ? item.DisplayName : loot.itemId,
+                    Abbreviate(item != null ? item.DisplayName : loot.itemId),
+                    FormatQuantity(loot.minQuantity, loot.maxQuantity),
+                    loot.chance >= 1f ? "Guaranteed" : loot.chance.ToString("P0"),
+                    item,
+                    "Loot",
+                    item != null ? item.Description : loot.itemId);
+            }
+
+            foreach (var reward in enemy.FirstClearRewards.Where(reward => reward != null && reward.IsValid))
+            {
+                var item = GetItem(reward.itemId);
+                AddRewardCard(
+                    strip.transform,
+                    item != null ? item.DisplayName : reward.itemId,
+                    Abbreviate(item != null ? item.DisplayName : reward.itemId),
+                    $"First {FormatQuantity(reward.minQuantity, reward.maxQuantity)}",
+                    "First Clear",
+                    item,
+                    "First Clear",
+                    item != null ? item.Description : reward.itemId);
+            }
+
+            if (strip.transform.childCount == 0)
+            {
+                var empty = EnsureText(strip.transform, "[TEXT] NoRewards", "No reward data.", 13f, new Color(0.58f, 0.65f, 0.72f, 1f), TextAlignmentOptions.Left);
+                ConfigureLayout(empty.gameObject, 36f, 36f, 0f);
+            }
+        }
+
+        private GameObject AddDetailsSection(string name, string heading)
+        {
+            var parent = GetDetailsParent();
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var section = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            section.transform.SetParent(parent, false);
+            if (startCombatButton != null)
+            {
+                section.transform.SetSiblingIndex(startCombatButton.transform.GetSiblingIndex());
+            }
+
+            ConfigureVertical(section, 5, 8, 8, 6, 6, TextAnchor.UpperLeft);
+            ConfigureLayout(section, 0f, -1f, 0f);
+            var image = section.GetComponent<Image>();
+            image.color = new Color(0f, 0f, 0f, 0.10f);
+            image.raycastTarget = false;
+
+            var title = EnsureText(section.transform, "[HEADER] SectionHeading", heading, 14f, new Color(0.86f, 0.69f, 0.35f, 1f), TextAlignmentOptions.Left);
+            ConfigureLayout(title.gameObject, 22f, 22f, 0f);
+            title.raycastTarget = false;
+
+            generatedDetails.Add(section);
+            return section;
+        }
+
+        private Transform GetDetailsParent()
+        {
+            if (detailsNameText != null)
+            {
+                return detailsNameText.transform.parent;
+            }
+
+            return startCombatButton != null ? startCombatButton.transform.parent : transform;
+        }
+
+        private void AddStatRow(Transform parent, string label, string value)
+        {
+            var row = new GameObject($"[ROW] {label}Stat", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            row.transform.SetParent(parent, false);
+            ConfigureHorizontal(row, 4, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            ConfigureLayout(row, 22f, 22f, 0f);
+
+            var labelText = EnsureText(row.transform, "[TEXT] StatLabel", label, 13f, new Color(0.68f, 0.78f, 0.86f, 1f), TextAlignmentOptions.Left);
+            ConfigureLayout(labelText.gameObject, 0f, 20f, 1f);
+            labelText.raycastTarget = false;
+
+            var valueText = EnsureText(row.transform, "[TEXT] StatValue", value, 13f, new Color(0.91f, 0.85f, 0.74f, 1f), TextAlignmentOptions.Right);
+            ConfigureLayout(valueText.gameObject, 110f, 20f, 0f, 110f);
+            valueText.raycastTarget = false;
+        }
+
+        private void AddRewardCard(Transform parent, string title, string placeholder, string quantity, string chance, ItemDefinition item, string category, string description)
+        {
+            var card = new GameObject("[CARD] RewardIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            card.transform.SetParent(parent, false);
+            ConfigureVertical(card, 2, 4, 4, 4, 4, TextAnchor.UpperCenter);
+            ConfigureLayout(card, 68f, 68f, 0f, 74f);
+            var cardImage = card.GetComponent<Image>();
+            cardImage.color = new Color(0.08f, 0.11f, 0.15f, 1f);
+            cardImage.raycastTarget = true;
+
+            var icon = new GameObject("[IMAGE] RewardIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+            icon.transform.SetParent(card.transform, false);
+            ConfigureLayout(icon, 34f, 34f, 0f, 34f);
+            var iconImage = icon.GetComponent<Image>();
+            var placeholderText = EnsureText(icon.transform, "[TEXT] RewardIconPlaceholder", placeholder, 9f, new Color(0.86f, 0.69f, 0.35f, 1f), TextAlignmentOptions.Center);
+            SetIcon(iconImage, item != null ? item.Icon : null, placeholderText, placeholder);
+
+            var label = EnsureText(card.transform, "[TEXT] RewardChance", string.IsNullOrWhiteSpace(quantity) ? chance : $"{quantity} {chance}", 10f, new Color(0.91f, 0.85f, 0.74f, 1f), TextAlignmentOptions.Center);
+            ConfigureLayout(label.gameObject, 20f, 20f, 0f);
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+
+            if (item != null)
+            {
+                ConfigureItemTooltip(card, item.ItemId, item, false);
+            }
+            else
+            {
+                ConfigureStaticTooltip(card, title, category, description);
+            }
+        }
+
+        private static string BuildRequirementText(CombatEnemyDefinition enemy)
+        {
+            return enemy == null ? string.Empty : $"Requires Warrior Level {enemy.RequiredWarriorLevel}";
+        }
+
+        private static string FormatQuantity(int min, int max)
+        {
+            return min == max ? $"x{min}" : $"x{min}-{max}";
+        }
+
+        private static string Abbreviate(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "?";
+            }
+
+            var words = value.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 1)
+            {
+                return words[0].Length <= 4 ? words[0].ToUpperInvariant() : words[0][..4].ToUpperInvariant();
+            }
+
+            return string.Concat(words.Select(word => char.ToUpperInvariant(word[0]))).Substring(0, Mathf.Min(4, words.Length));
+        }
+
+        private static GameObject EnsureChild(Transform parent, string name)
+        {
+            var existing = HierarchySearch.FindDeep(parent, name);
+            if (existing != null && existing.parent == parent)
+            {
+                return existing.gameObject;
+            }
+
+            var child = new GameObject(name, typeof(RectTransform));
+            child.transform.SetParent(parent, false);
+            return child;
+        }
+
+        private static TMP_Text EnsureText(Transform parent, string name, string value, float size, Color color, TextAlignmentOptions alignment)
+        {
+            var existing = HierarchySearch.FindText(parent, name);
+            if (existing == null || existing.transform.parent != parent)
+            {
+                var child = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                child.transform.SetParent(parent, false);
+                existing = child.GetComponent<TMP_Text>();
+            }
+
+            existing.text = value;
+            existing.fontSize = size;
+            existing.color = color;
+            existing.alignment = alignment;
+            existing.raycastTarget = false;
+            return existing;
+        }
+
+        private static void ConfigureHorizontal(GameObject target, float spacing, int left, int right, int top, int bottom, TextAnchor alignment)
+        {
+            var layout = target.GetComponent<HorizontalLayoutGroup>() ?? target.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.padding = new RectOffset(left, right, top, bottom);
+            layout.childAlignment = alignment;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+        }
+
+        private static void ConfigureVertical(GameObject target, float spacing, int left, int right, int top, int bottom, TextAnchor alignment)
+        {
+            var layout = target.GetComponent<VerticalLayoutGroup>() ?? target.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.padding = new RectOffset(left, right, top, bottom);
+            layout.childAlignment = alignment;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+        }
+
+        private static void ConfigureLayout(GameObject target, float preferredHeight, float minHeight, float flexibleHeight, float preferredWidth = -1f)
+        {
+            var layout = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
+            layout.preferredHeight = preferredHeight;
+            layout.minHeight = minHeight;
+            layout.flexibleHeight = flexibleHeight;
+            layout.preferredWidth = preferredWidth;
+        }
+
+        private static void Stretch(RectTransform rect, float left, float bottom, float right, float top)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(right, top);
         }
 
         private string BuildLootPreview(CombatEnemyDefinition enemy)
@@ -1277,6 +2523,7 @@ namespace IdleGame.UI.Combat
 
         private void StartCombat()
         {
+            CloseDropdown();
             combatSystem?.StartCombat();
             Refresh();
         }
@@ -1284,6 +2531,7 @@ namespace IdleGame.UI.Combat
         private void QueueHeavyStrike()
         {
             combatSystem?.QueueHeavyStrike();
+            Refresh();
         }
 
         private void UseMinorPotion()
@@ -1360,6 +2608,39 @@ namespace IdleGame.UI.Combat
             RefreshLog();
         }
 
+        private void OnCombatFeedback(CombatFeedbackEvent feedback)
+        {
+            switch (feedback.Kind)
+            {
+                case CombatFeedbackKind.PlayerDamaged:
+                    Flash(playerPortraitFrameImage, logEnemyHitColor);
+                    SpawnFloatingText(feedback.Critical ? $"CRIT {feedback.Amount}" : feedback.Amount.ToString(), playerPortraitFrameImage != null ? playerPortraitFrameImage.transform : transform, logEnemyHitColor, feedback.Critical);
+                    break;
+                case CombatFeedbackKind.EnemyDamaged:
+                    Flash(enemyPortraitFrameImage, feedback.Critical ? logCriticalColor : logPlayerHitColor);
+                    SpawnFloatingText(feedback.Critical ? $"CRIT {feedback.Amount}" : feedback.Amount.ToString(), enemyPortraitFrameImage != null ? enemyPortraitFrameImage.transform : transform, feedback.Critical ? logCriticalColor : logPlayerHitColor, feedback.Critical);
+                    break;
+                case CombatFeedbackKind.Healing:
+                    Flash(playerPortraitFrameImage, logPotionColor);
+                    Flash(potionSlotImage, logPotionColor);
+                    SpawnFloatingText($"+{feedback.Amount}", playerPortraitFrameImage != null ? playerPortraitFrameImage.transform : transform, logPotionColor);
+                    break;
+                case CombatFeedbackKind.HeavyStrikeStarted:
+                    Flash(heavyStrikeCardImage, logCriticalColor);
+                    break;
+                case CombatFeedbackKind.EnemyDefeated:
+                    Flash(enemyPortraitFrameImage, logVictoryColor);
+                    SpawnFloatingText("Defeated", enemyPortraitFrameImage != null ? enemyPortraitFrameImage.transform : transform, logVictoryColor, true);
+                    break;
+                case CombatFeedbackKind.EnemyRespawnStarted:
+                    Flash(enemyPortraitFrameImage, logWarningColor);
+                    break;
+                case CombatFeedbackKind.EnemyRespawned:
+                    Flash(enemyPortraitFrameImage, logPlayerHitColor);
+                    break;
+            }
+        }
+
         private static void ClearGenerated(List<GameObject> objects)
         {
             foreach (var item in objects.Where(item => item != null))
@@ -1393,6 +2674,88 @@ namespace IdleGame.UI.Combat
             }
 
             return Mathf.Max(0f, enemy.AttackInterval * (1f - combatSystem.EnemyAttackProgress01));
+        }
+
+        private enum SelectorKind
+        {
+            None = 0,
+            Region = 1,
+            ActivityType = 2,
+            Location = 3
+        }
+
+        private readonly struct SelectorOption
+        {
+            public SelectorOption(string displayName, string id, bool selected, UnityEngine.Events.UnityAction select)
+            {
+                DisplayName = displayName;
+                Id = id;
+                Selected = selected;
+                Select = select;
+            }
+
+            public string DisplayName { get; }
+            public string Id { get; }
+            public bool Selected { get; }
+            public UnityEngine.Events.UnityAction Select { get; }
+        }
+
+        private sealed class FloatingCombatText
+        {
+            private const float Lifetime = 0.85f;
+            private readonly TMP_Text text;
+            private readonly RectTransform rect;
+            private Vector2 startPosition;
+            private Color startColor;
+            private float remaining;
+
+            public FloatingCombatText(TMP_Text text)
+            {
+                this.text = text;
+                rect = text != null ? text.transform as RectTransform : null;
+                if (this.text != null)
+                {
+                    this.text.gameObject.SetActive(false);
+                }
+            }
+
+            public TMP_Text Text => text;
+            public bool IsActive => text != null && text.gameObject.activeSelf;
+
+            public void Play(string value, Vector2 position, Color color, bool critical)
+            {
+                if (text == null || rect == null)
+                {
+                    return;
+                }
+
+                startPosition = position;
+                startColor = color;
+                remaining = Lifetime;
+                text.text = value;
+                text.color = color;
+                text.fontSize = critical ? 17f : 14f;
+                text.alignment = TextAlignmentOptions.Center;
+                text.gameObject.SetActive(true);
+                rect.anchoredPosition = position;
+            }
+
+            public void Tick(float delta)
+            {
+                if (!IsActive || rect == null)
+                {
+                    return;
+                }
+
+                remaining = Mathf.Max(0f, remaining - delta);
+                var progress = 1f - remaining / Lifetime;
+                rect.anchoredPosition = startPosition + new Vector2(0f, Mathf.Lerp(0f, 34f, progress));
+                text.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, progress));
+                if (remaining <= 0f)
+                {
+                    text.gameObject.SetActive(false);
+                }
+            }
         }
     }
 }

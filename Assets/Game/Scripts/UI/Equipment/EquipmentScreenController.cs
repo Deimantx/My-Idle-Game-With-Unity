@@ -4,6 +4,7 @@ using IdleGame.Equipment;
 using IdleGame.Inventory;
 using IdleGame.Items;
 using IdleGame.UI.Shared;
+using IdleGame.UI.Tooltips;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -54,6 +55,8 @@ namespace IdleGame.UI.Equipment
             {
                 inventorySystem.InventoryChanged -= Refresh;
             }
+
+            TooltipManager.HideGlobal();
         }
 
         public void ConfigureForEditor(EquipmentSystem equipment, InventorySystem inventory)
@@ -87,11 +90,13 @@ namespace IdleGame.UI.Equipment
             if (mainHandText != null)
             {
                 mainHandText.text = mainHand != null ? DescribeEquipment(mainHand) : "Empty";
+                ConfigureEquippedTooltip(mainHandText, mainHand, "Empty Main-Hand Slot", "Accepts Warrior weapons and profession-capable tools.");
             }
 
             if (offhandText != null)
             {
                 offhandText.text = offhand != null ? DescribeEquipment(offhand) : "Empty";
+                ConfigureEquippedTooltip(offhandText, offhand, "Empty Offhand Slot", "Accepts shields and support items unless a two-handed Main-Hand item is equipped.");
             }
 
             if (statSummaryText != null)
@@ -156,10 +161,61 @@ namespace IdleGame.UI.Equipment
                     var itemId = stack.itemId;
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(() => TryEquip(itemId));
+                    ConfigureItemTooltip(button.gameObject, stack.itemId, item, true, true);
                 }
 
+                ConfigureItemTooltip(row, stack.itemId, item, true, true);
                 generatedEntries.Add(row);
             }
+        }
+
+        private void ConfigureEquippedTooltip(TMP_Text target, EquipmentDefinition equipment, string emptyName, string emptyDescription)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.raycastTarget = true;
+            if (equipment == null)
+            {
+                var staticProvider = target.GetComponent<StaticTooltipProvider>() ?? target.gameObject.AddComponent<StaticTooltipProvider>();
+                staticProvider.ConfigureForEditor(emptyName, "Equipment Slot", emptyDescription);
+                var staticTrigger = target.GetComponent<TooltipTrigger>() ?? target.gameObject.AddComponent<TooltipTrigger>();
+                staticTrigger.ConfigureForEditor(staticProvider);
+                return;
+            }
+
+            var item = ResolveItem(equipment.ItemId);
+            ConfigureItemTooltip(target.gameObject, equipment.ItemId, item, false, false);
+        }
+
+        private void ConfigureItemTooltip(GameObject target, string itemId, ItemDefinition item, bool includeQuantity, bool includeComparison)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var image = target.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = true;
+            }
+
+            var provider = target.GetComponent<ItemTooltipProvider>() ?? target.AddComponent<ItemTooltipProvider>();
+            provider.ConfigureForEditor(itemId, item, inventorySystem, equipmentSystem, null, includeQuantity, includeComparison);
+            var trigger = target.GetComponent<TooltipTrigger>() ?? target.AddComponent<TooltipTrigger>();
+            trigger.ConfigureForEditor(provider);
+        }
+
+        private ItemDefinition ResolveItem(string itemId)
+        {
+            return inventorySystem != null &&
+                   inventorySystem.ItemDatabase != null &&
+                   inventorySystem.ItemDatabase.TryGetItem(itemId, out var item)
+                ? item
+                : null;
         }
 
         private void TryEquip(string itemId)

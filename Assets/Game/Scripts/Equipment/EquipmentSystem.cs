@@ -19,6 +19,7 @@ namespace IdleGame.Equipment
         public int InitializationOrder => 20;
         public string MainHandItemId => mainHandItemId;
         public string OffhandItemId => offhandItemId;
+        public EquipmentDatabase EquipmentDatabase => equipmentDatabase;
         public bool EquipmentLocked { get; private set; }
 
         public void InitializeService()
@@ -175,6 +176,15 @@ namespace IdleGame.Equipment
         {
             return equipmentDatabase != null && !string.IsNullOrWhiteSpace(mainHandItemId) &&
                    equipmentDatabase.TryGetEquipment(mainHandItemId, out var definition)
+                ? definition
+                : null;
+        }
+
+        public EquipmentDefinition GetEquippedDefinition(EquipmentSlot slot)
+        {
+            var itemId = GetEquippedItemId(slot);
+            return equipmentDatabase != null && !string.IsNullOrWhiteSpace(itemId) &&
+                   equipmentDatabase.TryGetEquipment(itemId, out var definition)
                 ? definition
                 : null;
         }

@@ -13,6 +13,33 @@ using UnityEngine;
 
 namespace IdleGame.Combat
 {
+    public enum CombatFeedbackKind
+    {
+        PlayerDamaged,
+        EnemyDamaged,
+        Healing,
+        HeavyStrikeStarted,
+        EnemyDefeated,
+        EnemyRespawnStarted,
+        EnemyRespawned
+    }
+
+    public readonly struct CombatFeedbackEvent
+    {
+        public CombatFeedbackEvent(CombatFeedbackKind kind, int amount = 0, bool critical = false, string label = "")
+        {
+            Kind = kind;
+            Amount = amount;
+            Critical = critical;
+            Label = label ?? string.Empty;
+        }
+
+        public CombatFeedbackKind Kind { get; }
+        public int Amount { get; }
+        public bool Critical { get; }
+        public string Label { get; }
+    }
+
     public sealed class CombatSystem : MonoBehaviour, IGameService
     {
         private const float DevotionRegenPerSecond = 3f;
@@ -84,6 +111,7 @@ namespace IdleGame.Combat
         public event Action StateChanged;
         public event Action<string> Notification;
         public event Action<string> LogAdded;
+        public event Action<CombatFeedbackEvent> Feedback;
 
         public int InitializationOrder => 60;
         public CombatCatalog Catalog => catalog;
@@ -104,6 +132,11 @@ namespace IdleGame.Combat
         public float PlayerAttackProgress01 => playerActionDuration <= 0f ? 0f : Mathf.Clamp01(playerActionTimer / playerActionDuration);
         public float EnemyAttackProgress01 => selectedEnemy == null ? 0f : Mathf.Clamp01(enemyAttackTimer / selectedEnemy.AttackInterval);
         public float HeavyStrikeCooldownRemaining => heavyStrikeCooldownRemaining;
+        public float HeavyStrikeCooldownDurationSeconds => HeavyStrikeDefinition.cooldownSeconds;
+        public string HeavyStrikeDisplayName => HeavyStrikeDefinition.displayName;
+        public float HeavyStrikeDamageMultiplierValue => HeavyStrikeDefinition.damageMultiplier;
+        public float HeavyStrikeActionTimePreviewSeconds => HeavyStrikeDefinition.GetActionTime(IsActive ? playerStats : PlayerCombatStats.Resolve(equipmentSystem));
+        public int MinorPotionHealingAmount => PotionHealingAmount;
         public float PotionCooldownRemaining => potionCooldownRemaining;
         public float RespawnRemainingSeconds => respawnRemainingSeconds;
         public int SessionKillCount => sessionKillCount;
@@ -236,9 +269,17 @@ namespace IdleGame.Combat
         public void SelectRegion(string regionId)
         {
             SelectedRegionId = regionId == catalog.RegionId ? regionId : string.Empty;
-            SelectedActivityTypeId = string.Empty;
-            SelectedLocationId = string.Empty;
-            selectedEnemy = null;
+            if (SelectedRegionId != catalog.RegionId)
+            {
+                SelectedActivityTypeId = string.Empty;
+                SelectedLocationId = string.Empty;
+                selectedEnemy = null;
+            }
+            else
+            {
+                ValidateSelectionChain();
+            }
+
             pendingWoodcuttingConfirmation = false;
             SaveManager.Instance?.SaveNow();
             StateChanged?.Invoke();
@@ -252,8 +293,7 @@ namespace IdleGame.Combat
             }
 
             SelectedActivityTypeId = activityTypeId;
-            SelectedLocationId = string.Empty;
-            selectedEnemy = null;
+            ValidateSelectionChain();
             pendingWoodcuttingConfirmation = false;
             SaveManager.Instance?.SaveNow();
             StateChanged?.Invoke();
@@ -267,7 +307,7 @@ namespace IdleGame.Combat
             }
 
             SelectedLocationId = locationId;
-            selectedEnemy = null;
+            ValidateSelectionChain();
             pendingWoodcuttingConfirmation = false;
             SaveManager.Instance?.SaveNow();
             StateChanged?.Invoke();
@@ -284,6 +324,32 @@ namespace IdleGame.Combat
             pendingWoodcuttingConfirmation = false;
             SaveManager.Instance?.SaveNow();
             StateChanged?.Invoke();
+        }
+
+        private void ValidateSelectionChain()
+        {
+            if (SelectedRegionId != catalog.RegionId)
+            {
+                SelectedActivityTypeId = string.Empty;
+                SelectedLocationId = string.Empty;
+                selectedEnemy = null;
+                return;
+            }
+
+            if (SelectedActivityTypeId != catalog.ActivityTypeId)
+            {
+                SelectedActivityTypeId = catalog.ActivityTypeId;
+            }
+
+            if (SelectedLocationId != catalog.LocationId)
+            {
+                SelectedLocationId = catalog.LocationId;
+            }
+
+            if (selectedEnemy == null || !catalog.TryGetEnemy(selectedEnemy.EnemyId, out _))
+            {
+                selectedEnemy = catalog.GetFirstEnemy();
+            }
         }
 
         public bool IsEnemyUnlocked(CombatEnemyDefinition enemy)
@@ -465,6 +531,7 @@ namespace IdleGame.Combat
             EnemyHealth = selectedEnemy.MaximumHealth;
             activeActivityService?.RequestStartPrimary(CombatConstants.ActivityId, "Combat", selectedEnemy.DisplayName);
             AddLog($"{selectedEnemy.DisplayName} appears.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.EnemyRespawned, 0, false, selectedEnemy.DisplayName));
             StateChanged?.Invoke();
         }
 
@@ -522,6 +589,7 @@ namespace IdleGame.Combat
 
             AddWarriorXp(validDamage * selectedEnemy.WarriorXpCoefficient);
             AddLog($"{label}: {(critical ? "critical " : string.Empty)}hit for {validDamage}.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.EnemyDamaged, validDamage, critical, label));
 
             if (EnemyHealth <= 0)
             {
@@ -549,6 +617,7 @@ namespace IdleGame.Combat
             PlayerHealth = Mathf.Max(0, PlayerHealth - damage);
             sessionDamageTaken += damage;
             AddLog($"{selectedEnemy.DisplayName} {(critical ? "critically " : string.Empty)}hits for {damage}.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.PlayerDamaged, damage, critical, selectedEnemy.DisplayName));
 
             if (PlayerHealth <= 0)
             {
@@ -597,6 +666,7 @@ namespace IdleGame.Combat
             sessionHealingReceived += PlayerHealth - previous;
             potionCooldownRemaining = PotionCooldownSeconds;
             AddLog($"Minor Healing Potion restores {PlayerHealth - previous} Health.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.Healing, PlayerHealth - previous, false, "Minor Healing Potion"));
             StateChanged?.Invoke();
             return true;
         }
@@ -703,6 +773,7 @@ namespace IdleGame.Combat
             playerActionDuration = HeavyStrikeDefinition.GetActionTime(playerStats);
             heavyStrikeCooldownRemaining = HeavyStrikeDefinition.cooldownSeconds;
             AddLog($"{HeavyStrikeDefinition.displayName} begins.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.HeavyStrikeStarted, 0, false, HeavyStrikeDefinition.displayName));
         }
 
         private void ResolveCurrentPlayerAction()
@@ -794,6 +865,7 @@ namespace IdleGame.Combat
             var enemyId = selectedEnemy.EnemyId;
             killCounts[enemyId] = killCounts.TryGetValue(enemyId, out var count) ? count + 1 : 1;
             AddLog($"{selectedEnemy.DisplayName} defeated.");
+            Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.EnemyDefeated, 0, false, selectedEnemy.DisplayName));
 
             var gold = UnityEngine.Random.Range(selectedEnemy.MinGold, selectedEnemy.MaxGold + 1);
             if (gold > 0)
@@ -828,6 +900,7 @@ namespace IdleGame.Combat
                 respawnRemainingSeconds = selectedEnemy.RespawnSeconds;
                 ClearPlayerActionChannel();
                 enemyAttackTimer = 0f;
+                Feedback?.Invoke(new CombatFeedbackEvent(CombatFeedbackKind.EnemyRespawnStarted, 0, false, selectedEnemy.DisplayName));
             }
             else
             {

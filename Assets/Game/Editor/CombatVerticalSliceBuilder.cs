@@ -199,6 +199,11 @@ namespace IdleGame.Editor
             Undo.RegisterFullObjectHierarchyUndo(screen.gameObject, "Build Combat Screen");
             ClearChildren(screen);
             var controller = screen.GetComponent<CombatScreenController>() ?? screen.gameObject.AddComponent<CombatScreenController>();
+            if (screen.GetComponent<CombatControlRaycaster>() == null)
+            {
+                screen.gameObject.AddComponent<CombatControlRaycaster>();
+            }
+
             controller.ConfigureForEditor(combat, progression);
             controller.ConfigureInventoryForEditor(inventory);
 
@@ -301,9 +306,22 @@ namespace IdleGame.Editor
             queuedPanel.SetActive(false);
 
             SectionHeading(player.transform, "[HEADER] SkillsSectionHeader", "SKILLS", 22f);
-            var heavy = PanelObject("[PANEL] HeavyStrikeCard", player.transform, new Color(0f, 0f, 0f, 0.12f), 62f);
+            var skillsList = PanelObject("[LIST] PlayerSkillsList", player.transform, new Color(0f, 0f, 0f, 0f), 0f, true);
+            var skillsLayout = skillsList.AddComponent<VerticalLayoutGroup>();
+            skillsLayout.spacing = 6f;
+            skillsLayout.padding = new RectOffset(0, 0, 0, 0);
+            skillsLayout.childControlWidth = true;
+            skillsLayout.childControlHeight = true;
+            skillsLayout.childForceExpandWidth = true;
+            skillsLayout.childForceExpandHeight = false;
+            var skillsElement = skillsList.GetComponent<LayoutElement>();
+            skillsElement.preferredHeight = 76f;
+            skillsElement.minHeight = 76f;
+            skillsElement.flexibleHeight = 0f;
+            var heavy = PanelObject("[PANEL] HeavyStrikeCard", skillsList.transform, new Color(0f, 0f, 0f, 0.12f), 76f);
             IconFrame("[FRAME] HeavyStrikeIconFrame", "[IMAGE] HeavyStrikeIcon", "[TEXT] HeavyStrikeIconLabel", heavy.transform, "HS", 48f, Anchor(0, .5f, 0, .5f, 32, 0, 48, 48));
-            TextObject("[TEXT] HeavyStrikeInfoText", heavy.transform, "Heavy Strike\nReady", 13f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 12, -166, -10));
+            TextObject("[TEXT] HeavyStrikeInfoText", heavy.transform, "Heavy Strike\nReady", 13f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 24, -166, -8));
+            BarObject("[BAR] HeavyStrikeCooldownBar", heavy.transform, Anchor(0, 0, 1, 0, 66, 12, -166, 10), Gold);
             var heavyReason = TextObject("[TEXT] HeavyStrikeReasonText", heavy.transform, string.Empty, 11f, Muted, TextAlignmentOptions.Left, Anchor(0, 0, 1, 0, 66, 7, -166, 16));
             heavyReason.gameObject.SetActive(false);
             ButtonObject("[BUTTON] HeavyStrikeButton", heavy.transform, "Use", Raised, Anchor(1, .5f, 1, .5f, -128, -10, 58, 24));
@@ -311,11 +329,11 @@ namespace IdleGame.Editor
 
             SectionHeading(player.transform, "[HEADER] ConsumablesSectionHeader", "CONSUMABLES", 22f);
             var consumables = PanelObject("[PANEL] CombatConsumablesPanel", player.transform, new Color(0f, 0f, 0f, 0.12f), 142f);
-            ConsumableSlot(consumables.transform, "[BUTTON] PotionQuickSlot", "[IMAGE] PotionIcon", "[TEXT] PotionIconLabel", "[TEXT] PotionInfoText", "[TEXT] PotionQuantityText", "POT", "Minor Potion", true, Anchor(0, .5f, 1f / 3f, 1, 6, -6, -4, -6));
-            ConsumableSlot(consumables.transform, "[BUTTON] Elixir1QuickSlot", "[IMAGE] Elixir1Icon", "[TEXT] Elixir1IconLabel", "[TEXT] Elixir1InfoText", "[TEXT] Elixir1QuantityText", "E1", "Elixir 1", false, Anchor(1f / 3f, .5f, 2f / 3f, 1, 4, -6, -4, -6));
-            ConsumableSlot(consumables.transform, "[BUTTON] Elixir2QuickSlot", "[IMAGE] Elixir2Icon", "[TEXT] Elixir2IconLabel", "[TEXT] Elixir2InfoText", "[TEXT] Elixir2QuantityText", "E2", "Elixir 2", false, Anchor(2f / 3f, .5f, 1, 1, 4, -6, -6, -6));
-            ConsumableSlot(consumables.transform, "[BUTTON] Elixir3QuickSlot", "[IMAGE] Elixir3Icon", "[TEXT] Elixir3IconLabel", "[TEXT] Elixir3InfoText", "[TEXT] Elixir3QuantityText", "E3", "Elixir 3", false, Anchor(0, 0, 1f / 3f, .5f, 6, 6, -4, 6));
-            ConsumableSlot(consumables.transform, "[BUTTON] Elixir4QuickSlot", "[IMAGE] Elixir4Icon", "[TEXT] Elixir4IconLabel", "[TEXT] Elixir4InfoText", "[TEXT] Elixir4QuantityText", "E4", "Elixir 4", false, Anchor(1f / 3f, 0, 2f / 3f, .5f, 4, 6, -4, 6));
+            ConsumableSlot(consumables.transform, "[BUTTON] PotionQuickSlot", "[IMAGE] PotionIcon", "[TEXT] PotionIconLabel", "[TEXT] PotionInfoText", "[TEXT] PotionQuantityText", "POT", "Potion", true, Anchor(0, .5f, 1f / 3f, 1, 6, -6, -4, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir1QuickSlot", "[IMAGE] Elixir1Icon", "[TEXT] Elixir1IconLabel", "[TEXT] Elixir1InfoText", "[TEXT] Elixir1QuantityText", "E1", "Elixir", false, Anchor(1f / 3f, .5f, 2f / 3f, 1, 4, -6, -4, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir2QuickSlot", "[IMAGE] Elixir2Icon", "[TEXT] Elixir2IconLabel", "[TEXT] Elixir2InfoText", "[TEXT] Elixir2QuantityText", "E2", "Elixir", false, Anchor(2f / 3f, .5f, 1, 1, 4, -6, -6, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir3QuickSlot", "[IMAGE] Elixir3Icon", "[TEXT] Elixir3IconLabel", "[TEXT] Elixir3InfoText", "[TEXT] Elixir3QuantityText", "E3", "Elixir", false, Anchor(0, 0, 1f / 3f, .5f, 6, 6, -4, 6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir4QuickSlot", "[IMAGE] Elixir4Icon", "[TEXT] Elixir4IconLabel", "[TEXT] Elixir4InfoText", "[TEXT] Elixir4QuantityText", "E4", "Elixir", false, Anchor(1f / 3f, 0, 2f / 3f, .5f, 4, 6, -4, 6));
             ConsumableSlot(consumables.transform, "[BUTTON] FoodQuickSlot", "[IMAGE] FoodIcon", "[TEXT] FoodIconLabel", "[TEXT] FoodInfoText", "[TEXT] FoodQuantityText", "FOOD", "Food", false, Anchor(2f / 3f, 0, 1, .5f, 4, 6, -6, 6));
             var playerStatus = InfoBlock(player.transform, "PLAYER STATUS", "[TEXT] PlayerStatusEffectsText", string.Empty, 44f);
             playerStatus.name = "[PANEL] PlayerStatusEffectsPanel";
@@ -364,6 +382,12 @@ namespace IdleGame.Editor
             enemyDetails.name = "[PANEL] EnemyCombatDetailsPanel";
             TextObject("[TEXT] EnemyCombatDetailsText", enemyDetails.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
             enemyDetails.SetActive(false);
+            var bossMechanics = PanelObject("[PANEL] EnemyBossMechanicsPanel", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 32f);
+            TextObject("[TEXT] EnemyBossMechanicsText", bossMechanics.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
+            bossMechanics.SetActive(false);
+            var phaseInfo = PanelObject("[PANEL] EnemyPhaseInfoPanel", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 32f);
+            TextObject("[TEXT] EnemyPhaseInfoText", phaseInfo.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
+            phaseInfo.SetActive(false);
 
             var log = Column("[PANEL] CombatLogPanel", columns.transform, 0.36f, 340f);
             log.GetComponent<VerticalLayoutGroup>().spacing = 6f;
@@ -375,6 +399,17 @@ namespace IdleGame.Editor
             ButtonObject("[BUTTON] ClearCombatLogButton", toolbar.transform, "Clear", Raised, Anchor(.86f, .5f, 1, .5f, 0, 0, -8, 22));
             var logContainer = ScrollContentPanel("[DYNAMIC CONTENT] CombatLogContainer", log.transform, 0f);
             LogTemplate(logContainer.transform);
+            var floatingRoot = PanelObject("[POOL] FloatingCombatTextRoot", active.transform, new Color(0f, 0f, 0f, 0f), 0f);
+            floatingRoot.GetComponent<Image>().raycastTarget = false;
+            var floatingElement = floatingRoot.AddComponent<LayoutElement>();
+            floatingElement.ignoreLayout = true;
+            StretchRect((RectTransform)floatingRoot.transform, 0f, 0f, 0f, 34f);
+            floatingRoot.transform.SetAsLastSibling();
+            for (var i = 0; i < 12; i++)
+            {
+                var floatText = TextObject(i == 0 ? "[TEXT] FloatingCombatTextTemplate" : "[TEXT] FloatingCombatText", floatingRoot.transform, string.Empty, 14f, Text, TextAlignmentOptions.Center, Anchor(.5f, .5f, .5f, .5f, 0, 0, 120, 28));
+                floatText.gameObject.SetActive(false);
+            }
             var footer = PanelObject("[FOOTER] SessionStatsFooter", active.transform, new Color(0f, 0f, 0f, 0.12f), 34f);
             var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
             footerLayout.spacing = 10f;
@@ -384,7 +419,7 @@ namespace IdleGame.Editor
             footerLayout.childForceExpandHeight = true;
             SessionFooterLabel(footer.transform, "SESSION", "[TEXT] SessionStatsTitle", 1.2f, Gold);
             SessionFooterLabel(footer.transform, "Damage", "[TEXT] SessionDamageDealtText", 1.6f, Text);
-            SessionFooterLabel(footer.transform, "Companion —", "[TEXT] SessionCompanionDamageText", 1.3f, Text);
+            SessionFooterLabel(footer.transform, "Companion", "[TEXT] SessionCompanionDamageText", 1.3f, Text);
             SessionFooterLabel(footer.transform, "Taken", "[TEXT] SessionDamageTakenText", 1.2f, Text);
             SessionFooterLabel(footer.transform, "Healing", "[TEXT] SessionHealingText", 1.2f, Text);
             SessionFooterLabel(footer.transform, "Defeated", "[TEXT] SessionDefeatedText", 1.2f, Text);
@@ -699,8 +734,13 @@ namespace IdleGame.Editor
         {
             var root = PanelObject(name, parent, new Color(0f, 0f, 0f, 0f), 34f);
             var toggle = root.AddComponent<Toggle>();
-            var check = PanelObject("[IMAGE] Checkmark", root.transform, Green, 0f);
-            SetRect((RectTransform)check.transform, new Vector2(0, .5f), new Vector2(0, .5f), new Vector2(16, 0), new Vector2(20, 20));
+            var box = PanelObject("[IMAGE] Checkbox", root.transform, new Color(0.02f, 0.03f, 0.04f, 1f), 0f);
+            SetRect((RectTransform)box.transform, new Vector2(0, .5f), new Vector2(0, .5f), new Vector2(15, 0), new Vector2(22, 22));
+            box.GetComponent<Image>().raycastTarget = true;
+            var check = PanelObject("[IMAGE] Checkmark", box.transform, Green, 0f);
+            SetRect((RectTransform)check.transform, new Vector2(.5f, .5f), new Vector2(.5f, .5f), Vector2.zero, new Vector2(14, 14));
+            check.GetComponent<Image>().raycastTarget = false;
+            toggle.targetGraphic = box.GetComponent<Image>();
             toggle.graphic = check.GetComponent<Image>();
             TextObject("[TEXT] Label", root.transform, label, 15f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 44, 0, -4, 0));
             toggle.isOn = true;
@@ -726,10 +766,27 @@ namespace IdleGame.Editor
 
         private static void SessionFooterLabel(Transform parent, string value, string textName, float flex, Color color)
         {
-            var text = TextObject(textName, parent, value, 12f, color, TextAlignmentOptions.Center, Stretch());
-            var element = text.gameObject.AddComponent<LayoutElement>();
+            if (textName == "[TEXT] SessionStatsTitle")
+            {
+                var title = TextObject(textName, parent, value, 12f, color, TextAlignmentOptions.Center, Stretch());
+                var titleElement = title.gameObject.AddComponent<LayoutElement>();
+                titleElement.flexibleWidth = flex;
+                titleElement.minWidth = 60f;
+                return;
+            }
+
+            var item = PanelObject("[ITEM] " + textName.Replace("[TEXT] ", string.Empty).Replace("Text", "FooterItem"), parent, new Color(0f, 0f, 0f, 0f), 0f, true);
+            var element = item.GetComponent<LayoutElement>();
             element.flexibleWidth = flex;
-            element.minWidth = 60f;
+            element.minWidth = 64f;
+            var layout = item.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 4f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = true;
+            TextObject(textName.Replace("Text", "Label"), item.transform, value, 11f, Muted, TextAlignmentOptions.Right, Stretch());
+            var initialValue = textName == "[TEXT] SessionCompanionDamageText" ? "—" : "0";
+            TextObject(textName, item.transform, initialValue, 12f, color, TextAlignmentOptions.Left, Stretch());
         }
 
         private static void SectionHeading(Transform parent, string name, string label, float height)
@@ -773,14 +830,14 @@ namespace IdleGame.Editor
         {
             var slot = ButtonObject(slotName, parent, string.Empty, interactable ? Raised : new Color(0.06f, 0.08f, 0.10f, 1f), rect);
             slot.GetComponent<Button>().interactable = interactable;
-            var iconFrame = IconFrame("[FRAME] " + slotName.Replace("[BUTTON] ", string.Empty) + "IconFrame", imageName, placeholderName, slot.transform, placeholder, 44f, Anchor(0, .5f, 0, .5f, 29, 0, 44, 44));
+            var iconFrame = IconFrame("[FRAME] " + slotName.Replace("[BUTTON] ", string.Empty) + "IconFrame", imageName, placeholderName, slot.transform, placeholder, 52f, Anchor(.5f, 1, .5f, 1, 0, -35, 52, 52));
             var quantityBackground = PanelObject("[IMAGE] QuantityBackground", iconFrame.transform, new Color(0f, 0f, 0f, 0.58f), 0f);
-            SetRect((RectTransform)quantityBackground.transform, Anchor(1, 0, 1, 0, -13, 10, 24, 18));
+            SetRect((RectTransform)quantityBackground.transform, Anchor(1, 0, 1, 0, -14, 11, 26, 18));
             quantityBackground.GetComponent<Image>().raycastTarget = false;
             quantityBackground.GetComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.75f);
-            var quantityText = TextObject(quantityName, iconFrame.transform, "0", 11f, Text, TextAlignmentOptions.BottomRight, Anchor(1, 0, 1, 0, -14, 9, 22, 16));
+            var quantityText = TextObject(quantityName, iconFrame.transform, "0", 11f, Text, TextAlignmentOptions.BottomRight, Anchor(1, 0, 1, 0, -15, 10, 24, 16));
             quantityText.raycastTarget = false;
-            var infoText = TextObject(infoName, slot.transform, label, 11f, interactable ? Text : Muted, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 58, 8, -6, -6));
+            var infoText = TextObject(infoName, slot.transform, label, 11f, interactable ? Text : Muted, TextAlignmentOptions.Center, Anchor(0, 0, 1, 0, 6, 7, -6, 18));
             infoText.textWrappingMode = TextWrappingModes.NoWrap;
             infoText.overflowMode = TextOverflowModes.Ellipsis;
             return slot;
@@ -789,7 +846,10 @@ namespace IdleGame.Editor
         private static GameObject ButtonObject(string name, Transform parent, string label, Color color, float height)
         {
             var button = PanelObject(name, parent, color, height);
-            button.AddComponent<Button>();
+            var buttonImage = button.GetComponent<Image>();
+            buttonImage.raycastTarget = true;
+            var buttonComponent = button.AddComponent<Button>();
+            buttonComponent.targetGraphic = buttonImage;
             TextObject("[TEXT] Label", button.transform, label, 16f, Text, TextAlignmentOptions.Center, Stretch());
             return button;
         }
@@ -798,7 +858,10 @@ namespace IdleGame.Editor
         {
             var button = PanelObject(name, parent, color, 0f);
             SetRect((RectTransform)button.transform, rect);
-            button.AddComponent<Button>();
+            var buttonImage = button.GetComponent<Image>();
+            buttonImage.raycastTarget = true;
+            var buttonComponent = button.AddComponent<Button>();
+            buttonComponent.targetGraphic = buttonImage;
             TextObject("[TEXT] Label", button.transform, label, 16f, Text, TextAlignmentOptions.Center, Stretch());
             return button;
         }
@@ -806,6 +869,7 @@ namespace IdleGame.Editor
         private static RuntimeFillBar BarObject(string name, Transform parent, RectSpec rect, Color fillColor, float preferredHeight = 0f)
         {
             var bar = PanelObject(name, parent, new Color(0.02f, 0.02f, 0.02f, 1f), preferredHeight);
+            bar.GetComponent<Image>().raycastTarget = false;
             SetRect((RectTransform)bar.transform, rect);
             var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             fill.transform.SetParent(bar.transform, false);
@@ -815,6 +879,7 @@ namespace IdleGame.Editor
             fillRect.offsetMin = Vector2.zero;
             fillRect.offsetMax = Vector2.zero;
             fill.GetComponent<Image>().color = fillColor;
+            fill.GetComponent<Image>().raycastTarget = false;
             var text = TextObject("[TEXT] ValueText", bar.transform, "--", 13f, Text, TextAlignmentOptions.Center, Stretch());
             var runtime = bar.AddComponent<RuntimeFillBar>();
             runtime.ConfigureForEditor(fillRect, text);

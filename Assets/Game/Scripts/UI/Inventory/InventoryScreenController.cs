@@ -3,6 +3,7 @@ using System.Linq;
 using IdleGame.Inventory;
 using IdleGame.Items;
 using IdleGame.UI.Shared;
+using IdleGame.UI.Tooltips;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,6 +29,8 @@ namespace IdleGame.UI.Inventory
         private readonly List<InventorySlotView> slotPool = new();
         private string selectedItemId = string.Empty;
 
+        public InventorySystem InventorySystem => inventorySystem;
+
         private void Awake()
         {
             AutoBind();
@@ -50,6 +53,8 @@ namespace IdleGame.UI.Inventory
             {
                 inventorySystem.InventoryChanged -= Refresh;
             }
+
+            TooltipManager.HideGlobal();
         }
 
         public void ConfigureForEditor(InventorySystem inventory)

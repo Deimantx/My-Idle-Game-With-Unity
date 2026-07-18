@@ -1,6 +1,7 @@
 using IdleGame.Inventory;
 using IdleGame.Items;
 using IdleGame.UI.Shared;
+using IdleGame.UI.Tooltips;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,8 @@ namespace IdleGame.UI.Inventory
         [SerializeField] private TMP_Text quantityText;
         [SerializeField] private TMP_Text badgeText;
         [SerializeField] private Button button;
+        [SerializeField] private TooltipTrigger tooltipTrigger;
+        [SerializeField] private ItemTooltipProvider tooltipProvider;
 
         private InventoryStack stack;
         private ItemDefinition item;
@@ -56,6 +59,18 @@ namespace IdleGame.UI.Inventory
                 button.onClick.RemoveListener(OnClicked);
                 button.onClick.AddListener(OnClicked);
             }
+
+            if (tooltipProvider != null)
+            {
+                tooltipProvider.ConfigureForEditor(
+                    inventoryStack.itemId,
+                    itemDefinition,
+                    screenController != null ? screenController.InventorySystem : null,
+                    null,
+                    null,
+                    true,
+                    false);
+            }
         }
 
         public void AutoBind()
@@ -65,6 +80,9 @@ namespace IdleGame.UI.Inventory
             quantityText ??= HierarchySearch.FindText(transform, "[TEXT] Quantity");
             badgeText ??= HierarchySearch.FindText(transform, "[BADGE] ItemStateBadge");
             button ??= GetComponent<Button>() ?? gameObject.AddComponent<Button>();
+            tooltipProvider ??= GetComponent<ItemTooltipProvider>() ?? gameObject.AddComponent<ItemTooltipProvider>();
+            tooltipTrigger ??= GetComponent<TooltipTrigger>() ?? gameObject.AddComponent<TooltipTrigger>();
+            tooltipTrigger.ConfigureForEditor(tooltipProvider);
         }
 
         private void OnClicked()
