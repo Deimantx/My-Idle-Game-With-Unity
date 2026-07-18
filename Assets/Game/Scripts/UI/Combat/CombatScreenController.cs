@@ -73,6 +73,11 @@ namespace IdleGame.UI.Combat
         [SerializeField] private TMP_Text companionSkillIconPlaceholderText;
         [SerializeField] private TMP_Text playerNameText;
         [SerializeField] private TMP_Text playerStatsText;
+        [SerializeField] private TMP_Text playerDamageValueText;
+        [SerializeField] private TMP_Text playerAttackSpeedValueText;
+        [SerializeField] private TMP_Text playerAccuracyValueText;
+        [SerializeField] private TMP_Text playerDefenceValueText;
+        [SerializeField] private TMP_Text playerCriticalValueText;
         [SerializeField] private TMP_Text currentActionNameText;
         [SerializeField] private TMP_Text currentActionRemainingText;
         [SerializeField] private Transform queuedActionPanel;
@@ -82,6 +87,10 @@ namespace IdleGame.UI.Combat
         [SerializeField] private RuntimeFillBar playerAttackBar;
         [SerializeField] private TMP_Text enemyNameText;
         [SerializeField] private TMP_Text enemyStatsText;
+        [SerializeField] private TMP_Text enemyDamageValueText;
+        [SerializeField] private TMP_Text enemyAttackSpeedValueText;
+        [SerializeField] private TMP_Text enemyAccuracyValueText;
+        [SerializeField] private TMP_Text enemyDefenceValueText;
         [SerializeField] private RuntimeFillBar enemyHealthBar;
         [SerializeField] private RuntimeFillBar enemyAttackBar;
         [SerializeField] private Transform enemyAbilitiesPanel;
@@ -92,9 +101,38 @@ namespace IdleGame.UI.Combat
         [SerializeField] private TMP_Text enemyActionRemainingText;
         [SerializeField] private Button heavyStrikeButton;
         [SerializeField] private TMP_Text heavyStrikeText;
+        [SerializeField] private TMP_Text heavyStrikeButtonText;
         [SerializeField] private TMP_Text heavyStrikeReasonText;
         [SerializeField] private Button potionButton;
         [SerializeField] private TMP_Text potionText;
+        [SerializeField] private TMP_Text potionButtonText;
+        [Header("Consumable Slot Sprites")]
+        [SerializeField] private Sprite elixir1IconSprite;
+        [SerializeField] private Sprite elixir2IconSprite;
+        [SerializeField] private Sprite elixir3IconSprite;
+        [SerializeField] private Sprite elixir4IconSprite;
+        [SerializeField] private Sprite foodIconSprite;
+        [SerializeField] private Image elixir1IconImage;
+        [SerializeField] private Image elixir2IconImage;
+        [SerializeField] private Image elixir3IconImage;
+        [SerializeField] private Image elixir4IconImage;
+        [SerializeField] private Image foodIconImage;
+        [SerializeField] private TMP_Text elixir1IconPlaceholderText;
+        [SerializeField] private TMP_Text elixir2IconPlaceholderText;
+        [SerializeField] private TMP_Text elixir3IconPlaceholderText;
+        [SerializeField] private TMP_Text elixir4IconPlaceholderText;
+        [SerializeField] private TMP_Text foodIconPlaceholderText;
+        [SerializeField] private Button elixir1Button;
+        [SerializeField] private Button elixir2Button;
+        [SerializeField] private Button elixir3Button;
+        [SerializeField] private Button elixir4Button;
+        [SerializeField] private Button foodButton;
+        [SerializeField] private TMP_Text potionQuantityText;
+        [SerializeField] private TMP_Text elixir1QuantityText;
+        [SerializeField] private TMP_Text elixir2QuantityText;
+        [SerializeField] private TMP_Text elixir3QuantityText;
+        [SerializeField] private TMP_Text elixir4QuantityText;
+        [SerializeField] private TMP_Text foodQuantityText;
         [SerializeField] private TMP_Text playerStatusEffectsText;
         [SerializeField] private Transform playerStatusEffectsPanel;
         [SerializeField] private Transform companionCombatPanel;
@@ -106,6 +144,12 @@ namespace IdleGame.UI.Combat
         [SerializeField] private TMP_Text enemyStatusEffectsText;
         [SerializeField] private TMP_Text enemyCombatDetailsText;
         [SerializeField] private TMP_Text sessionStatsText;
+        [SerializeField] private TMP_Text sessionDamageDealtText;
+        [SerializeField] private TMP_Text sessionCompanionDamageText;
+        [SerializeField] private TMP_Text sessionDamageTakenText;
+        [SerializeField] private TMP_Text sessionHealingText;
+        [SerializeField] private TMP_Text sessionDefeatedText;
+        [SerializeField] private TMP_Text sessionDpsText;
         [SerializeField] private TMP_Text autoScrollStatusText;
         [SerializeField] private Button pauseScrollButton;
         [SerializeField] private TMP_Text pauseScrollButtonText;
@@ -159,6 +203,11 @@ namespace IdleGame.UI.Combat
                 progressionSystem.ProgressChanged += OnProgressChanged;
             }
 
+            if (inventorySystem != null)
+            {
+                inventorySystem.InventoryChanged += Refresh;
+            }
+
             HookButtons();
             Refresh();
         }
@@ -175,6 +224,11 @@ namespace IdleGame.UI.Combat
             if (progressionSystem != null)
             {
                 progressionSystem.ProgressChanged -= OnProgressChanged;
+            }
+
+            if (inventorySystem != null)
+            {
+                inventorySystem.InventoryChanged -= Refresh;
             }
         }
 
@@ -237,6 +291,11 @@ namespace IdleGame.UI.Combat
             if (companionSkillIconPlaceholderText == null) companionSkillIconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] CompanionSkillIconLabel");
             if (playerNameText == null) playerNameText = HierarchySearch.FindText(transform, "[TEXT] PlayerName");
             if (playerStatsText == null) playerStatsText = HierarchySearch.FindText(transform, "[TEXT] PlayerStats");
+            if (playerDamageValueText == null) playerDamageValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerDamageValue");
+            if (playerAttackSpeedValueText == null) playerAttackSpeedValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerAttackSpeedValue");
+            if (playerAccuracyValueText == null) playerAccuracyValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerAccuracyValue");
+            if (playerDefenceValueText == null) playerDefenceValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerDefenceValue");
+            if (playerCriticalValueText == null) playerCriticalValueText = HierarchySearch.FindText(transform, "[TEXT] PlayerCriticalValue");
             if (currentActionNameText == null) currentActionNameText = HierarchySearch.FindText(transform, "[TEXT] CurrentActionNameText");
             if (currentActionRemainingText == null) currentActionRemainingText = HierarchySearch.FindText(transform, "[TEXT] CurrentActionRemainingText");
             if (queuedActionPanel == null) queuedActionPanel = HierarchySearch.FindDeep(transform, "[PANEL] QueuedActionPanel");
@@ -246,6 +305,10 @@ namespace IdleGame.UI.Combat
             if (playerAttackBar == null) playerAttackBar = HierarchySearch.FindOrAddFillBar(transform, "[BAR] PlayerAttackBar");
             if (enemyNameText == null) enemyNameText = HierarchySearch.FindText(transform, "[TEXT] ActiveEnemyName");
             if (enemyStatsText == null) enemyStatsText = HierarchySearch.FindText(transform, "[TEXT] ActiveEnemyStats");
+            if (enemyDamageValueText == null) enemyDamageValueText = HierarchySearch.FindText(transform, "[TEXT] EnemyDamageValue");
+            if (enemyAttackSpeedValueText == null) enemyAttackSpeedValueText = HierarchySearch.FindText(transform, "[TEXT] EnemyAttackSpeedValue");
+            if (enemyAccuracyValueText == null) enemyAccuracyValueText = HierarchySearch.FindText(transform, "[TEXT] EnemyAccuracyValue");
+            if (enemyDefenceValueText == null) enemyDefenceValueText = HierarchySearch.FindText(transform, "[TEXT] EnemyDefenceValue");
             if (enemyHealthBar == null) enemyHealthBar = HierarchySearch.FindOrAddFillBar(transform, "[BAR] EnemyHealthBar");
             if (enemyAttackBar == null) enemyAttackBar = HierarchySearch.FindOrAddFillBar(transform, "[BAR] EnemyAttackBar");
             if (enemyAbilitiesPanel == null) enemyAbilitiesPanel = HierarchySearch.FindDeep(transform, "[PANEL] EnemyAbilitiesPanel");
@@ -255,10 +318,34 @@ namespace IdleGame.UI.Combat
             if (enemyActionDetailsText == null) enemyActionDetailsText = HierarchySearch.FindText(transform, "[TEXT] EnemyActionDetailsText");
             if (enemyActionRemainingText == null) enemyActionRemainingText = HierarchySearch.FindText(transform, "[TEXT] EnemyActionRemainingText");
             if (heavyStrikeButton == null) heavyStrikeButton = HierarchySearch.FindButton(transform, "[BUTTON] HeavyStrikeButton");
-            if (heavyStrikeText == null) heavyStrikeText = HierarchySearch.FindText(heavyStrikeButton != null ? heavyStrikeButton.transform : null, "[TEXT] Label");
+            if (heavyStrikeText == null) heavyStrikeText = HierarchySearch.FindText(transform, "[TEXT] HeavyStrikeInfoText");
+            if (heavyStrikeButtonText == null) heavyStrikeButtonText = HierarchySearch.FindText(heavyStrikeButton != null ? heavyStrikeButton.transform : null, "[TEXT] Label");
             if (heavyStrikeReasonText == null) heavyStrikeReasonText = HierarchySearch.FindText(transform, "[TEXT] HeavyStrikeReasonText");
+            if (potionButton == null) potionButton = HierarchySearch.FindButton(transform, "[BUTTON] PotionQuickSlot");
             if (potionButton == null) potionButton = HierarchySearch.FindButton(transform, "[BUTTON] HealingPotionButton");
-            if (potionText == null) potionText = HierarchySearch.FindText(potionButton != null ? potionButton.transform : null, "[TEXT] Label");
+            if (potionText == null) potionText = HierarchySearch.FindText(transform, "[TEXT] PotionInfoText");
+            if (potionButtonText == null) potionButtonText = HierarchySearch.FindText(potionButton != null ? potionButton.transform : null, "[TEXT] Label");
+            if (potionQuantityText == null) potionQuantityText = HierarchySearch.FindText(transform, "[TEXT] PotionQuantityText");
+            if (elixir1IconImage == null) elixir1IconImage = HierarchySearch.FindDeep(transform, "[IMAGE] Elixir1Icon")?.GetComponent<Image>();
+            if (elixir2IconImage == null) elixir2IconImage = HierarchySearch.FindDeep(transform, "[IMAGE] Elixir2Icon")?.GetComponent<Image>();
+            if (elixir3IconImage == null) elixir3IconImage = HierarchySearch.FindDeep(transform, "[IMAGE] Elixir3Icon")?.GetComponent<Image>();
+            if (elixir4IconImage == null) elixir4IconImage = HierarchySearch.FindDeep(transform, "[IMAGE] Elixir4Icon")?.GetComponent<Image>();
+            if (foodIconImage == null) foodIconImage = HierarchySearch.FindDeep(transform, "[IMAGE] FoodIcon")?.GetComponent<Image>();
+            if (elixir1IconPlaceholderText == null) elixir1IconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] Elixir1IconLabel");
+            if (elixir2IconPlaceholderText == null) elixir2IconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] Elixir2IconLabel");
+            if (elixir3IconPlaceholderText == null) elixir3IconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] Elixir3IconLabel");
+            if (elixir4IconPlaceholderText == null) elixir4IconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] Elixir4IconLabel");
+            if (foodIconPlaceholderText == null) foodIconPlaceholderText = HierarchySearch.FindText(transform, "[TEXT] FoodIconLabel");
+            if (elixir1Button == null) elixir1Button = HierarchySearch.FindButton(transform, "[BUTTON] Elixir1QuickSlot");
+            if (elixir2Button == null) elixir2Button = HierarchySearch.FindButton(transform, "[BUTTON] Elixir2QuickSlot");
+            if (elixir3Button == null) elixir3Button = HierarchySearch.FindButton(transform, "[BUTTON] Elixir3QuickSlot");
+            if (elixir4Button == null) elixir4Button = HierarchySearch.FindButton(transform, "[BUTTON] Elixir4QuickSlot");
+            if (foodButton == null) foodButton = HierarchySearch.FindButton(transform, "[BUTTON] FoodQuickSlot");
+            if (elixir1QuantityText == null) elixir1QuantityText = HierarchySearch.FindText(transform, "[TEXT] Elixir1QuantityText");
+            if (elixir2QuantityText == null) elixir2QuantityText = HierarchySearch.FindText(transform, "[TEXT] Elixir2QuantityText");
+            if (elixir3QuantityText == null) elixir3QuantityText = HierarchySearch.FindText(transform, "[TEXT] Elixir3QuantityText");
+            if (elixir4QuantityText == null) elixir4QuantityText = HierarchySearch.FindText(transform, "[TEXT] Elixir4QuantityText");
+            if (foodQuantityText == null) foodQuantityText = HierarchySearch.FindText(transform, "[TEXT] FoodQuantityText");
             if (playerStatusEffectsPanel == null) playerStatusEffectsPanel = HierarchySearch.FindDeep(transform, "[PANEL] PlayerStatusEffectsPanel");
             if (playerStatusEffectsText == null) playerStatusEffectsText = HierarchySearch.FindText(transform, "[TEXT] PlayerStatusEffectsText");
             if (companionCombatPanel == null) companionCombatPanel = HierarchySearch.FindDeep(transform, "[PANEL] CompanionCombatPanel");
@@ -270,6 +357,12 @@ namespace IdleGame.UI.Combat
             if (enemyStatusEffectsText == null) enemyStatusEffectsText = HierarchySearch.FindText(transform, "[TEXT] EnemyStatusEffectsText");
             if (enemyCombatDetailsText == null) enemyCombatDetailsText = HierarchySearch.FindText(transform, "[TEXT] EnemyCombatDetailsText");
             if (sessionStatsText == null) sessionStatsText = HierarchySearch.FindText(transform, "[TEXT] SessionStatsText");
+            if (sessionDamageDealtText == null) sessionDamageDealtText = HierarchySearch.FindText(transform, "[TEXT] SessionDamageDealtText");
+            if (sessionCompanionDamageText == null) sessionCompanionDamageText = HierarchySearch.FindText(transform, "[TEXT] SessionCompanionDamageText");
+            if (sessionDamageTakenText == null) sessionDamageTakenText = HierarchySearch.FindText(transform, "[TEXT] SessionDamageTakenText");
+            if (sessionHealingText == null) sessionHealingText = HierarchySearch.FindText(transform, "[TEXT] SessionHealingText");
+            if (sessionDefeatedText == null) sessionDefeatedText = HierarchySearch.FindText(transform, "[TEXT] SessionDefeatedText");
+            if (sessionDpsText == null) sessionDpsText = HierarchySearch.FindText(transform, "[TEXT] SessionDpsText");
             if (autoScrollStatusText == null) autoScrollStatusText = HierarchySearch.FindText(transform, "[TEXT] AutoScrollStatusText");
             if (pauseScrollButton == null) pauseScrollButton = HierarchySearch.FindButton(transform, "[BUTTON] PauseScrollButton");
             if (pauseScrollButtonText == null) pauseScrollButtonText = HierarchySearch.FindText(pauseScrollButton != null ? pauseScrollButton.transform : null, "[TEXT] Label");
@@ -471,9 +564,14 @@ namespace IdleGame.UI.Combat
             if (playerNameText != null) playerNameText.text = "Player - Warrior";
             if (playerStatsText != null)
             {
-                playerStatsText.text = $"Damage {stats.MinDamage}-{stats.MaxDamage}\nAttack {stats.AttackInterval:0.0}s\nAccuracy {stats.Accuracy}\nDefense {stats.Defense}\nCrit {stats.CriticalChance:P0}";
+                playerStatsText.text = string.Empty;
             }
 
+            SetText(playerDamageValueText, $"{stats.MinDamage}-{stats.MaxDamage}");
+            SetText(playerAttackSpeedValueText, $"{stats.AttackInterval:0.0}s");
+            SetText(playerAccuracyValueText, stats.Accuracy.ToString());
+            SetText(playerDefenceValueText, stats.Defense.ToString());
+            SetText(playerCriticalValueText, $"{stats.CriticalChance:P0}");
             playerHealthBar?.SetValue((float)combatSystem.PlayerHealth / stats.MaxHealth, $"{combatSystem.PlayerHealth} / {stats.MaxHealth}");
             devotionBar?.SetValue(combatSystem.PlayerDevotion / stats.MaxDevotion, $"{Mathf.FloorToInt(combatSystem.PlayerDevotion)} / {stats.MaxDevotion}");
             RefreshCurrentAction();
@@ -485,9 +583,13 @@ namespace IdleGame.UI.Combat
             if (enemyNameText != null) enemyNameText.text = enemy.DisplayName;
             if (enemyStatsText != null)
             {
-                enemyStatsText.text = $"Accuracy {enemy.Accuracy}\nDefense {enemy.Defense}";
+                enemyStatsText.text = string.Empty;
             }
 
+            SetText(enemyDamageValueText, $"{enemy.MinDamage}-{enemy.MaxDamage}");
+            SetText(enemyAttackSpeedValueText, $"{enemy.AttackInterval:0.0}s");
+            SetText(enemyAccuracyValueText, enemy.Accuracy.ToString());
+            SetText(enemyDefenceValueText, enemy.Defense.ToString());
             if (enemyAbilitiesText != null)
             {
                 enemyAbilitiesText.text = "Special Abilities: None";
@@ -510,12 +612,12 @@ namespace IdleGame.UI.Combat
 
             if (enemyCombatDetailsText != null)
             {
-                enemyCombatDetailsText.text = "Target: Player";
+                enemyCombatDetailsText.text = string.Empty;
             }
 
             if (enemyCombatDetailsPanel != null)
             {
-                enemyCombatDetailsPanel.gameObject.SetActive(true);
+                enemyCombatDetailsPanel.gameObject.SetActive(false);
             }
 
             enemyHealthBar?.SetValue((float)combatSystem.EnemyHealth / enemy.MaximumHealth, $"{combatSystem.EnemyHealth} / {enemy.MaximumHealth}");
@@ -562,9 +664,10 @@ namespace IdleGame.UI.Combat
         private void RefreshPlayerActionControls()
         {
             SetIcon(heavyStrikeIconImage, heavyStrikeIconSprite, heavyStrikeIconPlaceholderText, "HS");
+            var heavyStatus = GetHeavyStrikeStatus();
             if (heavyStrikeText != null)
             {
-                heavyStrikeText.text = $"Heavy Strike\nDevotion: {combatSystem.HeavyStrikeDevotionLabel}\nStatus: {GetHeavyStrikeStatus()}";
+                heavyStrikeText.text = $"Heavy Strike\n{heavyStatus}";
             }
 
             if (heavyStrikeButton != null)
@@ -572,24 +675,42 @@ namespace IdleGame.UI.Combat
                 heavyStrikeButton.interactable = combatSystem.CanQueueHeavyStrike;
             }
 
-            if (heavyStrikeReasonText != null)
+            if (heavyStrikeButtonText != null)
             {
-                var reason = combatSystem.HeavyStrikeUnavailableReason;
-                heavyStrikeReasonText.text = string.IsNullOrWhiteSpace(reason) ? "Ready to queue" : reason;
+                heavyStrikeButtonText.text = "Use";
             }
 
-            SetIcon(potionIconImage, potionIconSprite, potionIconPlaceholderText, "POT");
+            if (heavyStrikeReasonText != null)
+            {
+                heavyStrikeReasonText.text = string.Empty;
+                heavyStrikeReasonText.gameObject.SetActive(false);
+            }
+
+            var potionItem = GetItem(CombatConstants.MinorHealingPotionItemId);
+            var potionSprite = potionItem != null && potionItem.Icon != null ? potionItem.Icon : potionIconSprite;
+            SetIcon(potionIconImage, potionSprite, potionIconPlaceholderText, "POT");
+            RefreshDisabledConsumableSlots();
             if (potionText != null)
             {
+                potionText.text = potionItem != null ? potionItem.DisplayName : "Minor Potion";
+            }
+
+            if (potionQuantityText != null)
+            {
                 var quantity = inventorySystem != null ? inventorySystem.GetQuantity(CombatConstants.MinorHealingPotionItemId) : 0;
-                var state = combatSystem.PotionCooldownRemaining > 0f ? $"Cooldown: {combatSystem.PotionCooldownRemaining:0.0}s" : quantity > 0 ? "Ready" : "Out of stock";
-                potionText.text = $"Minor Potion\nQuantity: {quantity}\n{state}";
+                potionQuantityText.text = quantity.ToString();
+                potionQuantityText.gameObject.SetActive(true);
             }
 
             if (potionButton != null)
             {
                 var quantity = inventorySystem != null ? inventorySystem.GetQuantity(CombatConstants.MinorHealingPotionItemId) : 0;
                 potionButton.interactable = combatSystem.IsActive && quantity > 0 && combatSystem.PotionCooldownRemaining <= 0f;
+            }
+
+            if (potionButtonText != null)
+            {
+                potionButtonText.text = string.Empty;
             }
         }
 
@@ -629,7 +750,7 @@ namespace IdleGame.UI.Combat
                 ? "Next enemy appears soon"
                 : $"Damage: {enemy.MinDamage}-{enemy.MaxDamage}";
 
-            SetIcon(enemyActionIconImage, enemyAttackIconSprite, enemyActionIconPlaceholderText, "EN");
+            SetIcon(enemyActionIconImage, enemyAttackIconSprite, enemyActionIconPlaceholderText, "ATK");
             if (enemyActionNameText != null)
             {
                 enemyActionNameText.text = actionName;
@@ -665,7 +786,7 @@ namespace IdleGame.UI.Combat
                 return $"Cooldown: {combatSystem.HeavyStrikeCooldownRemaining:0.0}s";
             }
 
-            return combatSystem.CanQueueHeavyStrike ? "Ready" : "Blocked";
+            return combatSystem.CanQueueHeavyStrike ? "Ready" : "Combat inactive";
         }
 
         private void SetActionIcon(Image image, TMP_Text placeholder, string actionLabel)
@@ -683,6 +804,54 @@ namespace IdleGame.UI.Combat
             }
 
             SetIcon(image, autoAttackIconSprite, placeholder, "ATK");
+        }
+
+        private void RefreshDisabledConsumableSlots()
+        {
+            SetIcon(elixir1IconImage, elixir1IconSprite, elixir1IconPlaceholderText, "E1");
+            SetIcon(elixir2IconImage, elixir2IconSprite, elixir2IconPlaceholderText, "E2");
+            SetIcon(elixir3IconImage, elixir3IconSprite, elixir3IconPlaceholderText, "E3");
+            SetIcon(elixir4IconImage, elixir4IconSprite, elixir4IconPlaceholderText, "E4");
+            SetIcon(foodIconImage, foodIconSprite, foodIconPlaceholderText, "FOOD");
+            SetButtonInteractable(elixir1Button, false);
+            SetButtonInteractable(elixir2Button, false);
+            SetButtonInteractable(elixir3Button, false);
+            SetButtonInteractable(elixir4Button, false);
+            SetButtonInteractable(foodButton, false);
+            SetText(elixir1QuantityText, "0");
+            SetText(elixir2QuantityText, "0");
+            SetText(elixir3QuantityText, "0");
+            SetText(elixir4QuantityText, "0");
+            SetText(foodQuantityText, "0");
+            SetActive(elixir1QuantityText, true);
+            SetActive(elixir2QuantityText, true);
+            SetActive(elixir3QuantityText, true);
+            SetActive(elixir4QuantityText, true);
+            SetActive(foodQuantityText, true);
+        }
+
+        private static void SetButtonInteractable(Button button, bool interactable)
+        {
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
+        }
+
+        private static void SetActive(Component component, bool active)
+        {
+            if (component != null)
+            {
+                component.gameObject.SetActive(active);
+            }
+        }
+
+        private static void SetText(TMP_Text text, string value)
+        {
+            if (text != null)
+            {
+                text.text = value;
+            }
         }
 
         private static void SetIcon(Image image, Sprite sprite, TMP_Text placeholder, string placeholderText)
@@ -738,7 +907,13 @@ namespace IdleGame.UI.Combat
 
         private void RefreshSessionStats()
         {
-            if (sessionStatsText == null)
+            if (sessionStatsText == null &&
+                sessionDamageDealtText == null &&
+                sessionCompanionDamageText == null &&
+                sessionDamageTakenText == null &&
+                sessionHealingText == null &&
+                sessionDefeatedText == null &&
+                sessionDpsText == null)
             {
                 return;
             }
@@ -750,7 +925,40 @@ namespace IdleGame.UI.Combat
             }
 
             lastDisplayedSessionStatsTick = tick;
-            sessionStatsText.text = $"SESSION   Damage Dealt: {combatSystem.SessionDamageDealt:N0}   Companion: -   Damage Taken: {combatSystem.SessionDamageTaken:N0}   Healing: {combatSystem.SessionHealingReceived:N0}   Defeated: {combatSystem.SessionKillCount:N0}   DPS: {combatSystem.SessionDamagePerSecond:0.0}";
+            if (sessionDamageDealtText != null)
+            {
+                sessionDamageDealtText.text = $"Damage {combatSystem.SessionDamageDealt:N0}";
+            }
+
+            if (sessionCompanionDamageText != null)
+            {
+                sessionCompanionDamageText.text = "Companion —";
+            }
+
+            if (sessionDamageTakenText != null)
+            {
+                sessionDamageTakenText.text = $"Taken {combatSystem.SessionDamageTaken:N0}";
+            }
+
+            if (sessionHealingText != null)
+            {
+                sessionHealingText.text = $"Healing {combatSystem.SessionHealingReceived:N0}";
+            }
+
+            if (sessionDefeatedText != null)
+            {
+                sessionDefeatedText.text = $"Defeated {combatSystem.SessionKillCount:N0}";
+            }
+
+            if (sessionDpsText != null)
+            {
+                sessionDpsText.text = $"DPS {combatSystem.SessionDamagePerSecond:0.0}";
+            }
+
+            if (sessionStatsText != null)
+            {
+                sessionStatsText.text = $"SESSION Damage {combatSystem.SessionDamageDealt:N0} Companion — Taken {combatSystem.SessionDamageTaken:N0} Healing {combatSystem.SessionHealingReceived:N0} Defeated {combatSystem.SessionKillCount:N0} DPS {combatSystem.SessionDamagePerSecond:0.0}";
+            }
         }
 
         private void RefreshLog()

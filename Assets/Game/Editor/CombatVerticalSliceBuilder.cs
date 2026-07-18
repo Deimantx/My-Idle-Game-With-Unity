@@ -232,136 +232,165 @@ namespace IdleGame.Editor
             var active = PanelObject("[STATE] ActiveCombatState", screen, Panel, 0f, true);
             active.SetActive(false);
             var activeLayout = active.AddComponent<VerticalLayoutGroup>();
-            activeLayout.spacing = 10f;
-            activeLayout.padding = new RectOffset(10, 10, 10, 10);
+            activeLayout.spacing = 8f;
+            activeLayout.padding = new RectOffset(8, 8, 8, 8);
             activeLayout.childControlWidth = true;
             activeLayout.childControlHeight = true;
             activeLayout.childForceExpandWidth = true;
             activeLayout.childForceExpandHeight = false;
 
-            var header = PanelObject("[HEADER] CombatHeader", active.transform, Raised, 94f);
+            var header = PanelObject("[HEADER] CombatHeader", active.transform, Raised, 72f);
             var headerLayout = header.AddComponent<HorizontalLayoutGroup>();
-            headerLayout.spacing = 12f;
-            headerLayout.padding = new RectOffset(14, 14, 8, 8);
+            headerLayout.spacing = 8f;
+            headerLayout.padding = new RectOffset(12, 12, 6, 6);
             headerLayout.childControlWidth = true;
             headerLayout.childControlHeight = true;
             headerLayout.childForceExpandHeight = true;
 
             var identity = HeaderSection("[SECTION] EncounterIdentity", header.transform, 0.35f, 280f);
-            TextObject("[TEXT] EncounterAreaText", identity.transform, "GREENVALE FOREST", 12f, Muted, TextAlignmentOptions.Left, Stretch(), 20f);
-            TextObject("[TEXT] EncounterEnemyText", identity.transform, "Forest Rat", 23f, Gold, TextAlignmentOptions.Left, Stretch(), 34f);
+            TextObject("[TEXT] EncounterAreaText", identity.transform, "GREENVALE FOREST", 11f, Muted, TextAlignmentOptions.Left, Stretch(), 16f);
+            TextObject("[TEXT] EncounterEnemyText", identity.transform, "Forest Rat", 20f, Gold, TextAlignmentOptions.Left, Stretch(), 28f);
             var hiddenTitle = TextObject("[TEXT] EncounterTitleText", identity.transform, "Forest Rat", 1f, new Color(0f, 0f, 0f, 0f), TextAlignmentOptions.Left, Stretch(), 1f);
             hiddenTitle.gameObject.SetActive(false);
 
             var progressionSection = HeaderSection("[SECTION] WarriorProgression", header.transform, 0.35f, 320f);
-            TextObject("[TEXT] WarriorLevelText", progressionSection.transform, "Warrior Level 1", 16f, Text, TextAlignmentOptions.Left, Stretch(), 24f);
-            BarObject("[BAR] WarriorXPBar", progressionSection.transform, Stretch(), Blue, 24f);
+            TextObject("[TEXT] WarriorLevelText", progressionSection.transform, "Warrior Level 1", 14f, Text, TextAlignmentOptions.Left, Stretch(), 18f);
+            BarObject("[BAR] WarriorXPBar", progressionSection.transform, Stretch(), Blue, 18f);
 
             var session = HeaderSection("[SECTION] CombatSession", header.transform, 0.30f, 240f);
-            TextObject("[TEXT] EncounterSessionText", session.transform, "Kills: 0\nTime: 00:00", 14f, Text, TextAlignmentOptions.Left, Stretch(), 42f);
-            ToggleObject("[TOGGLE] AutoRepeatToggle", session.transform, "Auto Repeat");
+            TextObject("[TEXT] EncounterSessionText", session.transform, "Kills: 0\nTime: 00:00", 12f, Text, TextAlignmentOptions.Left, Stretch(), 30f);
+            ToggleObject("[TOGGLE] AutoRepeatToggle", session.transform, "Auto Repeat", Stretch(), 24f);
 
             var columns = PanelObject("[LAYOUT] ActiveCombatColumns", active.transform, new Color(0f, 0f, 0f, 0f), 0f, true);
             var activeColumnsLayout = columns.AddComponent<HorizontalLayoutGroup>();
-            activeColumnsLayout.spacing = 10f;
+            activeColumnsLayout.spacing = 8f;
             activeColumnsLayout.childControlWidth = true;
             activeColumnsLayout.childControlHeight = true;
             activeColumnsLayout.childForceExpandHeight = true;
 
-            var player = Column("[PANEL] PlayerCombatPanel", columns.transform, 0.28f, 330f);
-            var playerPortrait = PanelObject("[PANEL] PlayerPortraitRow", player.transform, new Color(0f, 0f, 0f, 0.10f), 92f);
-            var playerPortraitLayout = playerPortrait.AddComponent<HorizontalLayoutGroup>();
-            playerPortraitLayout.spacing = 10f;
-            playerPortraitLayout.padding = new RectOffset(8, 8, 8, 8);
-            playerPortraitLayout.childControlWidth = true;
-            playerPortraitLayout.childControlHeight = true;
-            IconFrame("[FRAME] PlayerPortraitFrame", "[IMAGE] PlayerPortrait", "[TEXT] PlayerPortraitPlaceholder", playerPortrait.transform, "WARRIOR", 74f, Stretch());
-            var playerInfo = PanelObject("[PANEL] PlayerPortraitInfo", playerPortrait.transform, new Color(0f, 0f, 0f, 0f), 0f, true);
-            playerInfo.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            var playerInfoLayout = playerInfo.AddComponent<VerticalLayoutGroup>();
-            playerInfoLayout.spacing = 5f;
-            playerInfoLayout.childControlWidth = true;
-            playerInfoLayout.childControlHeight = true;
-            TextObject("[TEXT] PlayerName", playerInfo.transform, "Player - Warrior", 20f, Gold, TextAlignmentOptions.Left, Stretch(), 24f);
-            BarObject("[BAR] PlayerHealthBar", playerInfo.transform, Stretch(), Red, 22f);
-            BarObject("[BAR] DevotionBar", playerInfo.transform, Stretch(), Blue, 20f);
-            TextObject("[TEXT] PlayerStats", player.transform, "Stats", 14f, Text, TextAlignmentOptions.TopLeft, Stretch(), 82f);
+            var player = Column("[PANEL] PlayerCombatPanel", columns.transform, 0.32f, 300f);
+            player.GetComponent<VerticalLayoutGroup>().spacing = 6f;
+            var playerPortrait = PanelObject("[PANEL] PlayerPortraitRow", player.transform, new Color(0f, 0f, 0f, 0.10f), 190f);
+            TextObject("[HEADER] PlayerSummaryHeader", playerPortrait.transform, "PLAYER SUMMARY", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, 1, 1, 8, -14, -8, 18));
+            IconFrame("[FRAME] PlayerPortraitFrame", "[IMAGE] PlayerPortrait", "[TEXT] PlayerPortraitPlaceholder", playerPortrait.transform, "WARRIOR", 88f, Anchor(0, 1, 0, 1, 52, -70, 88, 88));
+            TextObject("[TEXT] PlayerName", playerPortrait.transform, "Player - Warrior", 18f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, 1, 1, 108, -34, -8, 24));
+            BarObject("[BAR] PlayerHealthBar", playerPortrait.transform, Anchor(0, 1, 1, 1, 108, -58, -8, 20), Red);
+            BarObject("[BAR] DevotionBar", playerPortrait.transform, Anchor(0, 1, 1, 1, 108, -82, -8, 20), Blue);
+            var playerStatsGrid = StatGrid("[GRID] PlayerCombatStatsGrid", playerPortrait.transform, Anchor(0, 0, 1, 0, 8, 37, -8, 62));
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerDamageLabel", "[TEXT] PlayerDamageValue", "Damage", "--");
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerAttackSpeedLabel", "[TEXT] PlayerAttackSpeedValue", "Attack Speed", "--");
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerAccuracyLabel", "[TEXT] PlayerAccuracyValue", "Accuracy", "--");
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerDefenceLabel", "[TEXT] PlayerDefenceValue", "Defence", "--");
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerCriticalLabel", "[TEXT] PlayerCriticalValue", "Critical", "--");
+            StatCell(playerStatsGrid.transform, "[TEXT] PlayerFutureStatLabel", "[TEXT] PlayerFutureStatValue", string.Empty, string.Empty).SetActive(false);
+            var playerStatsLegacy = TextObject("[TEXT] PlayerStats", playerPortrait.transform, string.Empty, 1f, new Color(0f, 0f, 0f, 0f), TextAlignmentOptions.TopLeft, Anchor(0, 0, 0, 0, 0, 0, 1, 1));
+            playerStatsLegacy.gameObject.SetActive(false);
 
-            var currentAction = InfoBlock(player.transform, "CURRENT ACTION", "[TEXT] CurrentActionNameText", "Waiting", 94f);
-            IconFrame("[FRAME] CurrentActionIconFrame", "[IMAGE] CurrentActionIcon", "[TEXT] CurrentActionIconLabel", currentAction.transform, "ATK", 44f, Anchor(0, .5f, 0, .5f, 8, 4, 44, 44));
-            SetRect((RectTransform)HierarchyChild(currentAction.transform, "[TEXT] CurrentActionNameText"), Anchor(0, 0, 1, 1, 60, 36, -8, -30));
-            TextObject("[TEXT] CurrentActionRemainingText", currentAction.transform, "Ready", 13f, Muted, TextAlignmentOptions.Right, Anchor(.50f, 1, 1, 1, 0, -30, -8, 22));
-            BarObject("[BAR] PlayerAttackBar", currentAction.transform, Anchor(0, 0, 1, 0, 60, 8, -8, 18), Green);
+            var currentAction = PanelObject("[PANEL] CurrentActionCard", player.transform, new Color(0f, 0f, 0f, 0.12f), 76f);
+            TextObject("[HEADER] CurrentActionHeader", currentAction.transform, "CURRENT ACTION", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, .55f, 1, 8, -14, 0, 18));
+            TextObject("[TEXT] CurrentActionRemainingText", currentAction.transform, "Ready", 12f, Muted, TextAlignmentOptions.Right, Anchor(.50f, 1, 1, 1, 0, -14, -8, 18));
+            IconFrame("[FRAME] CurrentActionIconFrame", "[IMAGE] CurrentActionIcon", "[TEXT] CurrentActionIconLabel", currentAction.transform, "ATK", 48f, Anchor(0, .5f, 0, .5f, 32, -11, 48, 48));
+            TextObject("[TEXT] CurrentActionNameText", currentAction.transform, "Waiting", 14f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 24, -8, -30));
+            BarObject("[BAR] PlayerAttackBar", currentAction.transform, Anchor(0, 0, 1, 0, 66, 10, -8, 14), Green);
 
-            var queuedPanel = InfoBlock(player.transform, "QUEUED ACTION", "[TEXT] QueuedActionText", string.Empty, 56f);
+            var queuedPanel = PanelObject("[PANEL] QueuedActionPanel", player.transform, new Color(0f, 0f, 0f, 0.10f), 34f);
             queuedPanel.name = "[PANEL] QueuedActionPanel";
-            IconFrame("[FRAME] QueuedActionIconFrame", "[IMAGE] QueuedActionIcon", "[TEXT] QueuedActionIconLabel", queuedPanel.transform, "HS", 36f, Anchor(0, .5f, 0, .5f, 8, -4, 36, 36));
-            SetRect((RectTransform)HierarchyChild(queuedPanel.transform, "[TEXT] QueuedActionText"), Anchor(0, 0, 1, 1, 52, 4, -8, -28));
+            TextObject("[HEADER] QueuedActionHeader", queuedPanel.transform, "QUEUED:", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 0, 0, 1, 8, 0, 56, 0));
+            IconFrame("[FRAME] QueuedActionIconFrame", "[IMAGE] QueuedActionIcon", "[TEXT] QueuedActionIconLabel", queuedPanel.transform, "HS", 24f, Anchor(0, .5f, 0, .5f, 78, 0, 24, 24));
+            TextObject("[TEXT] QueuedActionText", queuedPanel.transform, string.Empty, 13f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 108, 0, -8, 0));
             queuedPanel.SetActive(false);
 
-            var heavy = InfoBlock(player.transform, "HEAVY STRIKE", "[TEXT] HeavyStrikeInfoText", "Heavy Strike", 104f);
-            IconFrame("[FRAME] HeavyStrikeIconFrame", "[IMAGE] HeavyStrikeIcon", "[TEXT] HeavyStrikeIconLabel", heavy.transform, "HS", 44f, Anchor(0, .5f, 0, .5f, 8, 11, 44, 44));
-            SetRect((RectTransform)HierarchyChild(heavy.transform, "[TEXT] HeavyStrikeInfoText"), Anchor(0, 0, 1, 1, 60, 26, -8, -30));
-            TextObject("[TEXT] HeavyStrikeReasonText", heavy.transform, "Ready to queue", 12f, Muted, TextAlignmentOptions.Left, Anchor(0, 0, 1, 0, 60, 42, -8, 18));
-            ButtonObject("[BUTTON] HeavyStrikeButton", heavy.transform, "Use", Raised, Anchor(0, 0, .54f, 0, 8, 8, -4, 30));
-            ToggleObject("[TOGGLE] HeavyStrikeAutoToggle", heavy.transform, "Auto", Anchor(.56f, 0, 1, 0, 0, 8, -8, 28));
+            SectionHeading(player.transform, "[HEADER] SkillsSectionHeader", "SKILLS", 22f);
+            var heavy = PanelObject("[PANEL] HeavyStrikeCard", player.transform, new Color(0f, 0f, 0f, 0.12f), 62f);
+            IconFrame("[FRAME] HeavyStrikeIconFrame", "[IMAGE] HeavyStrikeIcon", "[TEXT] HeavyStrikeIconLabel", heavy.transform, "HS", 48f, Anchor(0, .5f, 0, .5f, 32, 0, 48, 48));
+            TextObject("[TEXT] HeavyStrikeInfoText", heavy.transform, "Heavy Strike\nReady", 13f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 12, -166, -10));
+            var heavyReason = TextObject("[TEXT] HeavyStrikeReasonText", heavy.transform, string.Empty, 11f, Muted, TextAlignmentOptions.Left, Anchor(0, 0, 1, 0, 66, 7, -166, 16));
+            heavyReason.gameObject.SetActive(false);
+            ButtonObject("[BUTTON] HeavyStrikeButton", heavy.transform, "Use", Raised, Anchor(1, .5f, 1, .5f, -128, -10, 58, 24));
+            ToggleObject("[TOGGLE] HeavyStrikeAutoToggle", heavy.transform, "Auto", Anchor(1, .5f, 1, .5f, -50, -10, 88, 24), 24f);
 
-            var potion = PanelObject("[PANEL] MinorPotionControl", player.transform, new Color(0f, 0f, 0f, 0.12f), 74f);
-            IconFrame("[FRAME] PotionIconFrame", "[IMAGE] PotionIcon", "[TEXT] PotionIconLabel", potion.transform, "POT", 44f, Anchor(0, .5f, 0, .5f, 8, 0, 44, 44));
-            ButtonObject("[BUTTON] HealingPotionButton", potion.transform, "Minor Potion", Raised, Anchor(0, 0, 1, 1, 60, 8, -8, -8));
+            SectionHeading(player.transform, "[HEADER] ConsumablesSectionHeader", "CONSUMABLES", 22f);
+            var consumables = PanelObject("[PANEL] CombatConsumablesPanel", player.transform, new Color(0f, 0f, 0f, 0.12f), 142f);
+            ConsumableSlot(consumables.transform, "[BUTTON] PotionQuickSlot", "[IMAGE] PotionIcon", "[TEXT] PotionIconLabel", "[TEXT] PotionInfoText", "[TEXT] PotionQuantityText", "POT", "Minor Potion", true, Anchor(0, .5f, 1f / 3f, 1, 6, -6, -4, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir1QuickSlot", "[IMAGE] Elixir1Icon", "[TEXT] Elixir1IconLabel", "[TEXT] Elixir1InfoText", "[TEXT] Elixir1QuantityText", "E1", "Elixir 1", false, Anchor(1f / 3f, .5f, 2f / 3f, 1, 4, -6, -4, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir2QuickSlot", "[IMAGE] Elixir2Icon", "[TEXT] Elixir2IconLabel", "[TEXT] Elixir2InfoText", "[TEXT] Elixir2QuantityText", "E2", "Elixir 2", false, Anchor(2f / 3f, .5f, 1, 1, 4, -6, -6, -6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir3QuickSlot", "[IMAGE] Elixir3Icon", "[TEXT] Elixir3IconLabel", "[TEXT] Elixir3InfoText", "[TEXT] Elixir3QuantityText", "E3", "Elixir 3", false, Anchor(0, 0, 1f / 3f, .5f, 6, 6, -4, 6));
+            ConsumableSlot(consumables.transform, "[BUTTON] Elixir4QuickSlot", "[IMAGE] Elixir4Icon", "[TEXT] Elixir4IconLabel", "[TEXT] Elixir4InfoText", "[TEXT] Elixir4QuantityText", "E4", "Elixir 4", false, Anchor(1f / 3f, 0, 2f / 3f, .5f, 4, 6, -4, 6));
+            ConsumableSlot(consumables.transform, "[BUTTON] FoodQuickSlot", "[IMAGE] FoodIcon", "[TEXT] FoodIconLabel", "[TEXT] FoodInfoText", "[TEXT] FoodQuantityText", "FOOD", "Food", false, Anchor(2f / 3f, 0, 1, .5f, 4, 6, -6, 6));
             var playerStatus = InfoBlock(player.transform, "PLAYER STATUS", "[TEXT] PlayerStatusEffectsText", string.Empty, 44f);
             playerStatus.name = "[PANEL] PlayerStatusEffectsPanel";
             playerStatus.SetActive(false);
-            var companion = InfoBlock(player.transform, "COMPANION", "[TEXT] CompanionSummaryText", string.Empty, 108f);
+            var companion = PanelObject("[PANEL] CompanionCombatPanel", player.transform, new Color(0f, 0f, 0f, 0.12f), 84f);
             companion.name = "[PANEL] CompanionCombatPanel";
-            IconFrame("[FRAME] CompanionPortraitFrame", "[IMAGE] CompanionPortrait", "[TEXT] CompanionPortraitPlaceholder", companion.transform, "COMPANION", 46f, Anchor(0, .5f, 0, .5f, 8, 8, 46, 46));
-            IconFrame("[FRAME] CompanionSkillIconFrame", "[IMAGE] CompanionSkillIcon", "[TEXT] CompanionSkillIconLabel", companion.transform, "CP", 34f, Anchor(0, 0, 0, 0, 60, 8, 34, 34));
-            SetRect((RectTransform)HierarchyChild(companion.transform, "[TEXT] CompanionSummaryText"), Anchor(0, 0, 1, 1, 62, 42, -8, -30));
-            BarObject("[BAR] CompanionActionBar", companion.transform, Anchor(0, 0, 1, 0, 100, 10, -8, 16), Gold);
+            TextObject("[HEADER] CompanionHeader", companion.transform, "COMPANION", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, 1, 1, 8, -14, -8, 18));
+            IconFrame("[FRAME] CompanionPortraitFrame", "[IMAGE] CompanionPortrait", "[TEXT] CompanionPortraitPlaceholder", companion.transform, "COMPANION", 56f, Anchor(0, .5f, 0, .5f, 36, -8, 56, 56));
+            IconFrame("[FRAME] CompanionSkillIconFrame", "[IMAGE] CompanionSkillIcon", "[TEXT] CompanionSkillIconLabel", companion.transform, "CP", 40f, Anchor(1, .5f, 1, .5f, -28, -8, 40, 40));
+            TextObject("[TEXT] CompanionSummaryText", companion.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 74, 26, -78, -30));
+            BarObject("[BAR] CompanionActionBar", companion.transform, Anchor(0, 0, 1, 0, 74, 10, -78, 12), Gold);
             companion.SetActive(false);
 
-            var enemy = Column("[PANEL] EnemyCombatPanel", columns.transform, 0.28f, 330f);
-            var enemyPortrait = PanelObject("[PANEL] EnemyPortraitRow", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 92f);
-            var enemyPortraitLayout = enemyPortrait.AddComponent<HorizontalLayoutGroup>();
-            enemyPortraitLayout.spacing = 10f;
-            enemyPortraitLayout.padding = new RectOffset(8, 8, 8, 8);
-            enemyPortraitLayout.childControlWidth = true;
-            enemyPortraitLayout.childControlHeight = true;
-            IconFrame("[FRAME] EnemyPortraitFrame", "[IMAGE] EnemyPortrait", "[TEXT] EnemyPortraitPlaceholder", enemyPortrait.transform, "ENEMY", 74f, Stretch());
-            var enemyInfo = PanelObject("[PANEL] EnemyPortraitInfo", enemyPortrait.transform, new Color(0f, 0f, 0f, 0f), 0f, true);
-            enemyInfo.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            var enemyInfoLayout = enemyInfo.AddComponent<VerticalLayoutGroup>();
-            enemyInfoLayout.spacing = 5f;
-            enemyInfoLayout.childControlWidth = true;
-            enemyInfoLayout.childControlHeight = true;
-            TextObject("[TEXT] ActiveEnemyName", enemyInfo.transform, "Enemy", 20f, Gold, TextAlignmentOptions.Left, Stretch(), 24f);
-            BarObject("[BAR] EnemyHealthBar", enemyInfo.transform, Stretch(), Red, 22f);
+            var enemy = Column("[PANEL] EnemyCombatPanel", columns.transform, 0.32f, 300f);
+            enemy.GetComponent<VerticalLayoutGroup>().spacing = 6f;
+            var enemyPortrait = PanelObject("[PANEL] EnemyPortraitRow", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 190f);
+            TextObject("[HEADER] EnemySummaryHeader", enemyPortrait.transform, "ENEMY SUMMARY", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, 1, 1, 8, -14, -8, 18));
+            IconFrame("[FRAME] EnemyPortraitFrame", "[IMAGE] EnemyPortrait", "[TEXT] EnemyPortraitPlaceholder", enemyPortrait.transform, "ENEMY", 88f, Anchor(0, 1, 0, 1, 52, -70, 88, 88));
+            TextObject("[TEXT] ActiveEnemyName", enemyPortrait.transform, "Enemy", 18f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, 1, 1, 108, -34, -8, 24));
+            BarObject("[BAR] EnemyHealthBar", enemyPortrait.transform, Anchor(0, 1, 1, 1, 108, -58, -8, 20), Red);
+            var enemyStatsGrid = StatGrid("[GRID] EnemyCombatStatsGrid", enemyPortrait.transform, Anchor(0, 0, 1, 0, 8, 37, -8, 62));
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyDamageLabel", "[TEXT] EnemyDamageValue", "Damage", "--");
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyAttackSpeedLabel", "[TEXT] EnemyAttackSpeedValue", "Attack Speed", "--");
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyAccuracyLabel", "[TEXT] EnemyAccuracyValue", "Accuracy", "--");
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyDefenceLabel", "[TEXT] EnemyDefenceValue", "Defence", "--");
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyFutureStat1Label", "[TEXT] EnemyFutureStat1Value", string.Empty, string.Empty).SetActive(false);
+            StatCell(enemyStatsGrid.transform, "[TEXT] EnemyFutureStat2Label", "[TEXT] EnemyFutureStat2Value", string.Empty, string.Empty).SetActive(false);
+            var enemyStatsLegacy = TextObject("[TEXT] ActiveEnemyStats", enemyPortrait.transform, string.Empty, 1f, new Color(0f, 0f, 0f, 0f), TextAlignmentOptions.TopLeft, Anchor(0, 0, 0, 0, 0, 0, 1, 1));
+            enemyStatsLegacy.gameObject.SetActive(false);
 
-            var telegraph = InfoBlock(enemy.transform, "NEXT ENEMY ACTION", "[TEXT] EnemyActionNameText", "Attack", 104f);
-            IconFrame("[FRAME] EnemyActionIconFrame", "[IMAGE] EnemyActionIcon", "[TEXT] EnemyActionIconLabel", telegraph.transform, "EN", 44f, Anchor(0, .5f, 0, .5f, 8, 12, 44, 44));
-            SetRect((RectTransform)HierarchyChild(telegraph.transform, "[TEXT] EnemyActionNameText"), Anchor(0, 0, 1, 1, 60, 46, -8, -30));
-            TextObject("[TEXT] EnemyActionDetailsText", telegraph.transform, "Damage: 2-4", 13f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 60, 24, -8, -52));
-            TextObject("[TEXT] EnemyActionRemainingText", telegraph.transform, "0.0s remaining", 13f, Muted, TextAlignmentOptions.Right, Anchor(.50f, 1, 1, 1, 0, -30, -8, 22));
-            BarObject("[BAR] EnemyAttackBar", telegraph.transform, Anchor(0, 0, 1, 0, 60, 8, -8, 18), Blue);
-            TextObject("[TEXT] ActiveEnemyStats", enemy.transform, "Stats", 14f, Text, TextAlignmentOptions.TopLeft, Stretch(), 56f);
-            var enemyAbilities = InfoBlock(enemy.transform, "ENEMY ABILITIES", "[TEXT] EnemyAbilitiesText", "Special Abilities: None", 40f);
+            var telegraph = PanelObject("[PANEL] EnemyActionTelegraph", enemy.transform, new Color(0f, 0f, 0f, 0.12f), 84f);
+            TextObject("[HEADER] EnemyActionHeader", telegraph.transform, "NEXT ENEMY ACTION", 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 1, .55f, 1, 8, -14, 0, 18));
+            TextObject("[TEXT] EnemyActionRemainingText", telegraph.transform, "0.0s remaining", 12f, Muted, TextAlignmentOptions.Right, Anchor(.50f, 1, 1, 1, 0, -14, -8, 18));
+            IconFrame("[FRAME] EnemyActionIconFrame", "[IMAGE] EnemyActionIcon", "[TEXT] EnemyActionIconLabel", telegraph.transform, "ATK", 48f, Anchor(0, .5f, 0, .5f, 32, -12, 48, 48));
+            TextObject("[TEXT] EnemyActionNameText", telegraph.transform, "Attack", 14f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 36, -8, -30));
+            TextObject("[TEXT] EnemyActionDetailsText", telegraph.transform, "Damage: 2-4", 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 66, 20, -8, -46));
+            BarObject("[BAR] EnemyAttackBar", telegraph.transform, Anchor(0, 0, 1, 0, 66, 9, -8, 14), Blue);
+            var enemyAbilities = PanelObject("[PANEL] EnemyAbilitiesPanel", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 32f);
             enemyAbilities.name = "[PANEL] EnemyAbilitiesPanel";
-            var enemyStatus = InfoBlock(enemy.transform, "STATUS EFFECTS", "[TEXT] EnemyStatusEffectsText", string.Empty, 40f);
+            TextObject("[TEXT] EnemyAbilitiesText", enemyAbilities.transform, "Special Abilities: None", 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
+            var enemyStatus = PanelObject("[PANEL] EnemyStatusEffectsPanel", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 32f);
             enemyStatus.name = "[PANEL] EnemyStatusEffectsPanel";
+            TextObject("[TEXT] EnemyStatusEffectsText", enemyStatus.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
             enemyStatus.SetActive(false);
-            var enemyDetails = InfoBlock(enemy.transform, "COMBAT DETAILS", "[TEXT] EnemyCombatDetailsText", "Target: Player", 48f);
+            var enemyDetails = PanelObject("[PANEL] EnemyCombatDetailsPanel", enemy.transform, new Color(0f, 0f, 0f, 0.10f), 32f);
             enemyDetails.name = "[PANEL] EnemyCombatDetailsPanel";
+            TextObject("[TEXT] EnemyCombatDetailsText", enemyDetails.transform, string.Empty, 12f, Text, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 8, 0, -8, 0));
+            enemyDetails.SetActive(false);
 
-            var log = Column("[PANEL] CombatLogPanel", columns.transform, 0.44f, 360f);
-            var toolbar = PanelObject("[PANEL] CombatLogToolbar", log.transform, new Color(0f, 0f, 0f, 0.12f), 36f);
+            var log = Column("[PANEL] CombatLogPanel", columns.transform, 0.36f, 340f);
+            log.GetComponent<VerticalLayoutGroup>().spacing = 6f;
+            var toolbar = PanelObject("[PANEL] CombatLogToolbar", log.transform, new Color(0f, 0f, 0f, 0.12f), 32f);
             TextObject("[HEADER] CombatLogHeader", toolbar.transform, "COMBAT LOG", 16f, Gold, TextAlignmentOptions.Left, Anchor(0, 0, .25f, 1, 8, 0, 0, 0));
             TextObject("[TEXT] AutoScrollStatusText", toolbar.transform, "Auto Scroll: On", 12f, Muted, TextAlignmentOptions.Left, Anchor(.24f, 0, .55f, 1, 0, 0, 0, 0));
-            ButtonObject("[BUTTON] NewLogEventsButton", toolbar.transform, "0 new", Green, Anchor(.55f, .5f, .73f, .5f, 0, 0, -4, 24)).SetActive(false);
-            ButtonObject("[BUTTON] PauseScrollButton", toolbar.transform, "Pause", Raised, Anchor(.73f, .5f, .86f, .5f, 0, 0, -4, 24));
-            ButtonObject("[BUTTON] ClearCombatLogButton", toolbar.transform, "Clear", Raised, Anchor(.86f, .5f, 1, .5f, 0, 0, -8, 24));
+            ButtonObject("[BUTTON] NewLogEventsButton", toolbar.transform, "0 new", Green, Anchor(.55f, .5f, .73f, .5f, 0, 0, -4, 22)).SetActive(false);
+            ButtonObject("[BUTTON] PauseScrollButton", toolbar.transform, "Pause", Raised, Anchor(.73f, .5f, .86f, .5f, 0, 0, -4, 22));
+            ButtonObject("[BUTTON] ClearCombatLogButton", toolbar.transform, "Clear", Raised, Anchor(.86f, .5f, 1, .5f, 0, 0, -8, 22));
             var logContainer = ScrollContentPanel("[DYNAMIC CONTENT] CombatLogContainer", log.transform, 0f);
             LogTemplate(logContainer.transform);
-            TextObject("[TEXT] SessionStatsText", active.transform, "SESSION   Damage Dealt: 0   Companion: -   Damage Taken: 0   Healing: 0   Defeated: 0   DPS: 0.0", 13f, Text, TextAlignmentOptions.Center, Stretch(), 34f);
+            var footer = PanelObject("[FOOTER] SessionStatsFooter", active.transform, new Color(0f, 0f, 0f, 0.12f), 34f);
+            var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
+            footerLayout.spacing = 10f;
+            footerLayout.padding = new RectOffset(8, 8, 5, 5);
+            footerLayout.childControlWidth = true;
+            footerLayout.childControlHeight = true;
+            footerLayout.childForceExpandHeight = true;
+            SessionFooterLabel(footer.transform, "SESSION", "[TEXT] SessionStatsTitle", 1.2f, Gold);
+            SessionFooterLabel(footer.transform, "Damage", "[TEXT] SessionDamageDealtText", 1.6f, Text);
+            SessionFooterLabel(footer.transform, "Companion —", "[TEXT] SessionCompanionDamageText", 1.3f, Text);
+            SessionFooterLabel(footer.transform, "Taken", "[TEXT] SessionDamageTakenText", 1.2f, Text);
+            SessionFooterLabel(footer.transform, "Healing", "[TEXT] SessionHealingText", 1.2f, Text);
+            SessionFooterLabel(footer.transform, "Defeated", "[TEXT] SessionDefeatedText", 1.2f, Text);
+            SessionFooterLabel(footer.transform, "DPS", "[TEXT] SessionDpsText", 1f, Text);
+            var hiddenStats = TextObject("[TEXT] SessionStatsText", footer.transform, string.Empty, 1f, new Color(0f, 0f, 0f, 0f), TextAlignmentOptions.Center, Stretch(), 1f);
+            hiddenStats.gameObject.SetActive(false);
 
             controller.AutoBind();
             EditorUtility.SetDirty(screen.gameObject);
@@ -685,6 +714,78 @@ namespace IdleGame.Editor
             return root;
         }
 
+        private static GameObject ToggleObject(string name, Transform parent, string label, RectSpec rect, float preferredHeight)
+        {
+            var root = ToggleObject(name, parent, label);
+            SetRect((RectTransform)root.transform, rect);
+            var element = root.GetComponent<LayoutElement>();
+            element.preferredHeight = preferredHeight;
+            element.minHeight = preferredHeight;
+            return root;
+        }
+
+        private static void SessionFooterLabel(Transform parent, string value, string textName, float flex, Color color)
+        {
+            var text = TextObject(textName, parent, value, 12f, color, TextAlignmentOptions.Center, Stretch());
+            var element = text.gameObject.AddComponent<LayoutElement>();
+            element.flexibleWidth = flex;
+            element.minWidth = 60f;
+        }
+
+        private static void SectionHeading(Transform parent, string name, string label, float height)
+        {
+            var row = PanelObject(name, parent, new Color(0f, 0f, 0f, 0f), height);
+            TextObject("[TEXT] Label", row.transform, label, 12f, Gold, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 4, 0, -4, 0));
+        }
+
+        private static GameObject StatGrid(string name, Transform parent, RectSpec rect)
+        {
+            var grid = PanelObject(name, parent, new Color(0f, 0f, 0f, 0.08f), 0f);
+            SetRect((RectTransform)grid.transform, rect);
+            var layout = grid.AddComponent<GridLayoutGroup>();
+            layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            layout.constraintCount = 2;
+            layout.cellSize = new Vector2(132f, 24f);
+            layout.spacing = new Vector2(10f, 4f);
+            layout.padding = new RectOffset(8, 8, 5, 5);
+            return grid;
+        }
+
+        private static GameObject StatCell(Transform parent, string labelName, string valueName, string label, string value)
+        {
+            var cell = PanelObject("[CELL] StatCell", parent, new Color(0f, 0f, 0f, 0f), 0f);
+            TextObject(labelName, cell.transform, label, 10f, Muted, TextAlignmentOptions.Left, Anchor(0, .5f, .68f, .5f, 0, 5, 0, 12));
+            TextObject(valueName, cell.transform, value, 12f, Text, TextAlignmentOptions.Left, Anchor(.70f, .5f, 1, .5f, 0, 5, 0, 14));
+            return cell;
+        }
+
+        private static GameObject ConsumableSlot(
+            Transform parent,
+            string slotName,
+            string imageName,
+            string placeholderName,
+            string infoName,
+            string quantityName,
+            string placeholder,
+            string label,
+            bool interactable,
+            RectSpec rect)
+        {
+            var slot = ButtonObject(slotName, parent, string.Empty, interactable ? Raised : new Color(0.06f, 0.08f, 0.10f, 1f), rect);
+            slot.GetComponent<Button>().interactable = interactable;
+            var iconFrame = IconFrame("[FRAME] " + slotName.Replace("[BUTTON] ", string.Empty) + "IconFrame", imageName, placeholderName, slot.transform, placeholder, 44f, Anchor(0, .5f, 0, .5f, 29, 0, 44, 44));
+            var quantityBackground = PanelObject("[IMAGE] QuantityBackground", iconFrame.transform, new Color(0f, 0f, 0f, 0.58f), 0f);
+            SetRect((RectTransform)quantityBackground.transform, Anchor(1, 0, 1, 0, -13, 10, 24, 18));
+            quantityBackground.GetComponent<Image>().raycastTarget = false;
+            quantityBackground.GetComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.75f);
+            var quantityText = TextObject(quantityName, iconFrame.transform, "0", 11f, Text, TextAlignmentOptions.BottomRight, Anchor(1, 0, 1, 0, -14, 9, 22, 16));
+            quantityText.raycastTarget = false;
+            var infoText = TextObject(infoName, slot.transform, label, 11f, interactable ? Text : Muted, TextAlignmentOptions.Left, Anchor(0, 0, 1, 1, 58, 8, -6, -6));
+            infoText.textWrappingMode = TextWrappingModes.NoWrap;
+            infoText.overflowMode = TextOverflowModes.Ellipsis;
+            return slot;
+        }
+
         private static GameObject ButtonObject(string name, Transform parent, string label, Color color, float height)
         {
             var button = PanelObject(name, parent, color, height);
@@ -736,6 +837,7 @@ namespace IdleGame.Editor
                 {
                     element.preferredHeight = preferredHeight;
                     element.minHeight = preferredHeight;
+                    element.flexibleHeight = 0f;
                 }
 
                 if (flexibleHeight)
@@ -826,16 +928,35 @@ namespace IdleGame.Editor
         {
             rect.anchorMin = spec.anchorMin;
             rect.anchorMax = spec.anchorMax;
-            if (Mathf.Approximately(spec.anchorMin.x, spec.anchorMax.x) && Mathf.Approximately(spec.anchorMin.y, spec.anchorMax.y))
+            var stretchX = !Mathf.Approximately(spec.anchorMin.x, spec.anchorMax.x);
+            var stretchY = !Mathf.Approximately(spec.anchorMin.y, spec.anchorMax.y);
+            if (!stretchX && !stretchY)
             {
                 rect.anchoredPosition = spec.position;
                 rect.sizeDelta = spec.size;
+                return;
             }
-            else
+
+            if (stretchX && stretchY)
             {
                 rect.offsetMin = spec.position;
                 rect.offsetMax = spec.size;
+                return;
             }
+
+            if (stretchX)
+            {
+                rect.offsetMin = new Vector2(spec.position.x, rect.offsetMin.y);
+                rect.offsetMax = new Vector2(spec.size.x, rect.offsetMax.y);
+                rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, spec.position.y);
+                rect.sizeDelta = new Vector2(rect.sizeDelta.x, spec.size.y);
+                return;
+            }
+
+            rect.anchoredPosition = new Vector2(spec.position.x, rect.anchoredPosition.y);
+            rect.sizeDelta = new Vector2(spec.size.x, rect.sizeDelta.y);
+            rect.offsetMin = new Vector2(rect.offsetMin.x, spec.position.y);
+            rect.offsetMax = new Vector2(rect.offsetMax.x, spec.size.y);
         }
 
         private static void SetRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size)
